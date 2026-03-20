@@ -112,3 +112,5 @@ module CamWheel
     end
   end
 end
+
+CamWheel.boot
