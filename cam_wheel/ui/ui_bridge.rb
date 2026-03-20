@@ -18,19 +18,19 @@ module CamWheel
 
       class << self
         def bind(dialog)
-          dialog.add_action_callback("camWheelReady") do |action_context|
-            action_context.respond(default_payload.to_json)
+          dialog.add_action_callback("camWheelReady") do |_action_context|
+            push_payload(dialog)
           end
 
-          dialog.add_action_callback("camWheelSave") do |action_context, payload|
+          dialog.add_action_callback("camWheelSave") do |_action_context, payload|
             save_payload(payload)
-            action_context.respond(default_payload.to_json)
+            push_payload(dialog)
             refresh_active_view
           end
 
-          dialog.add_action_callback("camWheelReset") do |action_context|
+          dialog.add_action_callback("camWheelReset") do |_action_context|
             reset_defaults
-            action_context.respond(default_payload.to_json)
+            push_payload(dialog)
             refresh_active_view
           end
         end
@@ -112,6 +112,12 @@ module CamWheel
             overlay_show_label: Data::SettingsStore::DEFAULTS.fetch(:overlay_show_label),
             penetration_offset: Data::SettingsStore::DEFAULTS.fetch(:penetration_offset)
           }
+        end
+
+        def push_payload(dialog)
+          json = JSON.generate(default_payload)
+          escaped = json.gsub("\\", "\\\\\\").gsub("'", "\\\\'")
+          dialog.execute_script("window.CamWheelSettings.receivePayload(JSON.parse('#{escaped}'));")
         end
       end
     end

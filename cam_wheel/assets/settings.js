@@ -15,16 +15,15 @@ const DEFAULT_LABELS = {
 };
 
 function requestBridge(action, payload) {
-  return new Promise((resolve) => {
-    if (!window.sketchup || !window.sketchup[action]) {
-      resolve(null);
-      return;
-    }
+  if (!window.sketchup || !window.sketchup[action]) {
+    return;
+  }
 
-    window.sketchup[action](payload ? JSON.stringify(payload) : "", (response) => {
-      resolve(response ? JSON.parse(response) : null);
-    });
-  });
+  if (payload === undefined) {
+    window.sketchup[action]();
+  } else {
+    window.sketchup[action](JSON.stringify(payload));
+  }
 }
 
 function setSelectOptions(select, values, labelMap = {}) {
@@ -95,25 +94,18 @@ function collectPayload() {
   };
 }
 
-async function loadSettings() {
-  const payload = await requestBridge("camWheelReady");
-  if (payload) {
+window.CamWheelSettings = {
+  receivePayload(payload) {
     applyPayload(payload);
   }
-}
+};
 
-document.getElementById("save").addEventListener("click", async () => {
-  const payload = await requestBridge("camWheelSave", collectPayload());
-  if (payload) {
-    applyPayload(payload);
-  }
+document.getElementById("save").addEventListener("click", () => {
+  requestBridge("camWheelSave", collectPayload());
 });
 
-document.getElementById("reset").addEventListener("click", async () => {
-  const payload = await requestBridge("camWheelReset");
-  if (payload) {
-    applyPayload(payload);
-  }
+document.getElementById("reset").addEventListener("click", () => {
+  requestBridge("camWheelReset");
 });
 
-loadSettings();
+requestBridge("camWheelReady");
