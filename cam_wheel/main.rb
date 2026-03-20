@@ -54,6 +54,7 @@ module CamWheel
       toolbar = ::UI::Toolbar.new(PLUGIN_NAME)
       toolbar.add_item(penetration_command)
       toolbar.add_item(align_view_command)
+      toolbar.add_item(two_point_perspective_command)
       toolbar.add_item(composition_overlay_command)
       toolbar.add_item(settings_command)
       toolbar.restore
@@ -64,6 +65,7 @@ module CamWheel
       submenu = extensions_menu.add_submenu(PLUGIN_NAME)
       submenu.add_item(penetration_command)
       submenu.add_item(align_view_command)
+      submenu.add_item(two_point_perspective_command)
       submenu.add_item(composition_overlay_command)
       submenu.add_item(settings_command)
     end
@@ -101,6 +103,17 @@ module CamWheel
       end
     end
 
+    def two_point_perspective_command
+      @two_point_perspective_command ||= begin
+        command = ::UI::Command.new("两点透视") { toggle_two_point_perspective }
+        command.menu_text = "两点透视"
+        command.tooltip = "两点透视"
+        command.status_bar_text = "切换 SketchUp 两点透视"
+        apply_command_icons(command, "two_point.svg")
+        command
+      end
+    end
+
     def settings_command
       @settings_command ||= begin
         command = ::UI::Command.new("设置") { show_settings }
@@ -114,6 +127,10 @@ module CamWheel
 
     def composition_overlay_tool
       @composition_overlay_tool ||= Tools::CompositionOverlayTool.new
+    end
+
+    def toggle_two_point_perspective
+      Sketchup.send_action("viewTwoPointPerspective:") if Sketchup.respond_to?(:send_action)
     end
 
     def apply_command_icons(command, file_name)

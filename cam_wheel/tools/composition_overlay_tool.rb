@@ -3,15 +3,18 @@
 composition_service_file = File.join(__dir__, "..", "services", "composition_service")
 overlay_renderer_file = File.join(__dir__, "..", "graphics", "overlay_renderer")
 settings_store_file = File.join(__dir__, "..", "data", "settings_store")
+export_service_file = File.join(__dir__, "..", "services", "export_service")
 
 if defined?(Sketchup)
   Sketchup.require(composition_service_file)
   Sketchup.require(overlay_renderer_file)
   Sketchup.require(settings_store_file)
+  Sketchup.require(export_service_file)
 else
   require composition_service_file
   require overlay_renderer_file
   require settings_store_file
+  require export_service_file
 end
 
 module CamWheel
@@ -22,6 +25,12 @@ module CamWheel
         "golden_ratio" => "黄金分割",
         "golden_spiral" => "黄金螺旋",
         "diagonal" => "对角线"
+      }.freeze
+      SPIRAL_CORNER_LABELS = {
+        "top_left" => "左上",
+        "top_right" => "右上",
+        "bottom_right" => "右下",
+        "bottom_left" => "左下"
       }.freeze
 
       class << self
@@ -49,6 +58,7 @@ module CamWheel
 
       def initialize
         @active = false
+        @suppress_overlay = false
       end
 
       def active?
@@ -67,6 +77,8 @@ module CamWheel
       end
 
       def draw(view)
+        return if @suppress_overlay
+
         payload = current_frame_payload(view)
 
         Graphics::OverlayRenderer.draw(
@@ -78,7 +90,8 @@ module CamWheel
           line_color: settings_store.read(:overlay_line_color),
           line_width: settings_store.read(:overlay_line_width),
           ratio_label: settings_store.read(:overlay_show_label) ? payload[:ratio_label] : nil,
-          style_label: settings_store.read(:overlay_show_label) ? payload[:style_label] : nil
+          style_label: settings_store.read(:overlay_show_label) ? payload[:style_label] : nil,
+          spiral_corner: payload[:spiral_corner]
         )
       end
 
@@ -102,6 +115,14 @@ module CamWheel
         menu.add_item("黄金分割") { set_style("golden_ratio") }
         menu.add_item("黄金螺旋") { set_style("golden_spiral") }
         menu.add_item("对角线") { set_style("diagonal") }
+        spiral_menu = menu.add_submenu("螺旋角度")
+        SPIRAL_CORNER_LABELS.each do |corner, label|
+          spiral_menu.add_item(label) { set_spiral_corner(corner) }
+        end
+        export_menu = menu.add_submenu("导出构图图片")
+        export_menu.add_item("1K") { export_image("1k") }
+        export_menu.add_item("2K") { export_image("2k") }
+        export_menu.add_item("4K") { export_image("4k") }
         menu.add_separator
         menu.add_item("切换比例") { cycle_ratio(Sketchup.active_model.active_view) }
         menu.add_item(toggle_label_menu_text) { toggle_label_visibility }
@@ -156,12 +177,15 @@ module CamWheel
         {
           frame: frame,
           style: style,
-          style_label: STYLE_LABELS.fetch(style, style),
+          style_label: style_display_label(style),
           ratio_label: Services::CompositionService.display_ratio_label(
             mode: ratio_mode,
             ratio_width: ratio_width,
             ratio_height: ratio_height
-          )
+          ),
+          ratio_width: ratio_width,
+          ratio_height: ratio_height,
+          spiral_corner: settings_store.read(:composition_spiral_corner)
         }
       end
 
@@ -186,6 +210,24 @@ module CamWheel
         Sketchup.active_model.active_view.invalidate
       end
 
+      def set_spiral_corner(corner)
+        settings_store.write(:composition_spiral_corner, corner)
+        Sketchup.status_text = "CamWheel 螺旋角度: #{SPIRAL_CORNER_LABELS.fetch(corner, corner)}"
+        Sketchup.active_model.active_view.invalidate
+      end
+
+      def export_image(preset)
+        payload = current_frame_payload(Sketchup.active_model.active_view)
+        exported = Services::ExportService.export_current_view(
+          view: Sketchup.active_model.active_view,
+          ratio_width: payload[:ratio_width],
+          ratio_height: payload[:ratio_height],
+          preset: preset,
+          hide_overlay: method(:suppress_overlay)
+        )
+        Sketchup.status_text = exported ? "CamWheel 图片导出完成" : "CamWheel 已取消图片导出"
+      end
+
       def toggle_label_visibility
         current = settings_store.read(:overlay_show_label)
         settings_store.write(:overlay_show_label, !current)
@@ -194,6 +236,16 @@ module CamWheel
 
       def toggle_label_menu_text
         settings_store.read(:overlay_show_label) ? "隐藏文字" : "显示文字"
+      end
+
+      def suppress_overlay(value)
+        @suppress_overlay = value
+      end
+
+      def style_display_label(style)
+        return "黄金螺旋·#{SPIRAL_CORNER_LABELS.fetch(settings_store.read(:composition_spiral_corner), '')}" if style == "golden_spiral"
+
+        STYLE_LABELS.fetch(style, style)
       end
 
       def settings_store

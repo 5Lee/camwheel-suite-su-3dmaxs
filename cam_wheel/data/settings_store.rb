@@ -19,6 +19,7 @@ module CamWheel
         composition_free_ratio_width: DEFAULT_FREE_RATIO_WIDTH,
         composition_free_ratio_height: DEFAULT_FREE_RATIO_HEIGHT,
         composition_style: DEFAULT_COMPOSITION_STYLE,
+        composition_spiral_corner: DEFAULT_SPIRAL_CORNER,
         overlay_line_color: DEFAULT_LINE_COLOR,
         overlay_line_width: DEFAULT_LINE_WIDTH,
         overlay_mask_color: DEFAULT_MASK_COLOR,

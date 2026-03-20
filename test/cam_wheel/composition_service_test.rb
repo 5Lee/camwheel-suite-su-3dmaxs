@@ -46,4 +46,10 @@ class CamWheelCompositionServiceTest < Minitest::Test
 
     assert_equal "1:1", next_ratio
   end
+
+  def test_spiral_corner_cycles_in_declared_order
+    next_corner = CamWheel::Services::CompositionService.next_spiral_corner("top_left")
+
+    assert_equal "top_right", next_corner
+  end
 end

@@ -25,6 +25,7 @@ module CamWheel
 
       STYLE_ORDER = %w[rule_of_thirds golden_ratio golden_spiral diagonal].freeze
       RATIO_ORDER = %w[1:1 4:3 3:2 16:9 9:16 2.35:1].freeze
+      SPIRAL_CORNER_ORDER = %w[top_left top_right bottom_right bottom_left].freeze
       PRESET_DIMENSIONS = {
         "1:1" => [1.0, 1.0].freeze,
         "4:3" => [4.0, 3.0].freeze,
@@ -61,6 +62,10 @@ module CamWheel
 
         def next_ratio(mode)
           cycle_value(RATIO_ORDER, mode)
+        end
+
+        def next_spiral_corner(corner)
+          cycle_value(SPIRAL_CORNER_ORDER, corner)
         end
 
         def ratio_dimensions(mode:, orientation:, free_width: nil, free_height: nil)

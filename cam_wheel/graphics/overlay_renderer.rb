@@ -35,12 +35,12 @@ module CamWheel
           ]
         end
 
-        def lines_for(style:, frame:)
+        def lines_for(style:, frame:, spiral_corner: "top_left")
           case style
           when "golden_ratio"
             golden_ratio_lines(x: frame.x, y: frame.y, width: frame.width, height: frame.height)
           when "golden_spiral"
-            golden_spiral_lines(x: frame.x, y: frame.y, width: frame.width, height: frame.height)
+            golden_spiral_lines(x: frame.x, y: frame.y, width: frame.width, height: frame.height, corner: spiral_corner)
           when "diagonal"
             diagonal_lines(x: frame.x, y: frame.y, width: frame.width, height: frame.height)
           else
@@ -81,22 +81,22 @@ module CamWheel
           ]
         end
 
-        def golden_spiral_lines(x:, y:, width:, height:)
-          points = logarithmic_spiral_points(x: x, y: y, width: width, height: height)
+        def golden_spiral_lines(x:, y:, width:, height:, corner: "top_left")
+          points = logarithmic_spiral_points(x: x, y: y, width: width, height: height, corner: corner)
           points.each_cons(2).map do |from_point, to_point|
             Line.new(from_point[0], from_point[1], to_point[0], to_point[1])
           end
         end
 
-        def draw(view:, frame:, style:, mask_color:, mask_alpha:, line_color:, line_width:, ratio_label: nil, style_label: nil)
+        def draw(view:, frame:, style:, mask_color:, mask_alpha:, line_color:, line_width:, ratio_label: nil, style_label: nil, spiral_corner: "top_left")
           draw_masks(view, mask_rectangles(viewport_width: view.vpwidth, viewport_height: view.vpheight, frame: frame), mask_color, mask_alpha)
-          draw_lines(view, lines_for(style: style, frame: frame), line_color, line_width)
+          draw_lines(view, lines_for(style: style, frame: frame, spiral_corner: spiral_corner), line_color, line_width)
           draw_status_label(view, frame, ratio_label, style_label, line_color)
         end
 
         private
 
-        def logarithmic_spiral_points(x:, y:, width:, height:)
+        def logarithmic_spiral_points(x:, y:, width:, height:, corner:)
           center_x = x + (width * 0.62)
           center_y = y + (height * 0.38)
           max_radius = [width, height].min * 0.46
@@ -116,7 +116,20 @@ module CamWheel
             angle += step
           end
 
-          points
+          orient_points(points, x: x, y: y, width: width, height: height, corner: corner)
+        end
+
+        def orient_points(points, x:, y:, width:, height:, corner:)
+          case corner
+          when "top_right"
+            points.map { |px, py| [x + width - (px - x), py] }
+          when "bottom_right"
+            points.map { |px, py| [x + width - (px - x), y + height - (py - y)] }
+          when "bottom_left"
+            points.map { |px, py| [px, y + height - (py - y)] }
+          else
+            points
+          end
         end
 
         def draw_masks(view, rectangles, color, alpha)

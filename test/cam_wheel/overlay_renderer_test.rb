@@ -47,10 +47,30 @@ class CamWheelOverlayRendererTest < Minitest::Test
       x: 0,
       y: 0,
       width: 1200,
-      height: 900
+      height: 900,
+      corner: "top_left"
     )
 
     assert_operator lines.length, :>, 12
     assert lines.any? { |line| line.x1 != line.x2 && line.y1 != line.y2 }
+  end
+
+  def test_golden_spiral_corner_changes_geometry
+    top_left = CamWheel::Graphics::OverlayRenderer.golden_spiral_lines(
+      x: 0,
+      y: 0,
+      width: 1200,
+      height: 900,
+      corner: "top_left"
+    )
+    top_right = CamWheel::Graphics::OverlayRenderer.golden_spiral_lines(
+      x: 0,
+      y: 0,
+      width: 1200,
+      height: 900,
+      corner: "top_right"
+    )
+
+    refute_equal top_left.first.to_a, top_right.first.to_a
   end
 end
