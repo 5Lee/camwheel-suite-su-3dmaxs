@@ -65,6 +65,9 @@ module CamWheel
         marker_points = @preview[:polygon]
         screen_point = @preview[:screen]
 
+        view.drawing_color = Sketchup::Color.new(255, 184, 77, 72)
+        draw_fill(view, marker_points)
+
         view.line_width = 2
         view.drawing_color = Sketchup::Color.new(255, 184, 77, 255)
         draw_loop(view, marker_points)
@@ -121,6 +124,11 @@ module CamWheel
         points = marker_points.map { |x, y| Geom::Point3d.new(x, y, 0) }
         points << points.first
         view.draw2d(GL_LINE_STRIP, points)
+      end
+
+      def draw_fill(view, marker_points)
+        points = marker_points.map { |x, y| Geom::Point3d.new(x, y, 0) }
+        view.draw2d(GL_POLYGON, points)
       end
 
       def draw_crosshair(view, screen_point)
