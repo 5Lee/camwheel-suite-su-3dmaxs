@@ -84,11 +84,24 @@ module CamWheel
           end
         end
 
+        def display_ratio_label(mode:, ratio_width:, ratio_height:)
+          return mode unless mode == "free"
+
+          "#{format_ratio_number(ratio_width)}:#{format_ratio_number(ratio_height)}"
+        end
+
         private
 
         def cycle_value(order, current)
           current_index = order.index(current) || -1
           order[(current_index + 1) % order.length]
+        end
+
+        def format_ratio_number(value)
+          number = value.to_f
+          return number.to_i.to_s if (number - number.to_i).abs < 0.001
+
+          format("%.2f", number).sub(/0+\z/, "").sub(/\.\z/, "")
         end
       end
     end

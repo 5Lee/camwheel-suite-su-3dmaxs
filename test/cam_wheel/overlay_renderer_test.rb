@@ -24,4 +24,33 @@ class CamWheelOverlayRendererTest < Minitest::Test
 
     assert_equal 4, masks.length
   end
+
+  def test_golden_ratio_lines_use_golden_section_not_thirds
+    golden = CamWheel::Graphics::OverlayRenderer.golden_ratio_lines(
+      x: 0,
+      y: 0,
+      width: 1200,
+      height: 900
+    )
+    thirds = CamWheel::Graphics::OverlayRenderer.rule_of_thirds_lines(
+      x: 0,
+      y: 0,
+      width: 1200,
+      height: 900
+    )
+
+    refute_in_delta thirds.first.x1, golden.first.x1, 5.0
+  end
+
+  def test_golden_spiral_contains_curved_like_segments
+    lines = CamWheel::Graphics::OverlayRenderer.golden_spiral_lines(
+      x: 0,
+      y: 0,
+      width: 1200,
+      height: 900
+    )
+
+    assert_operator lines.length, :>, 12
+    assert lines.any? { |line| line.x1 != line.x2 && line.y1 != line.y2 }
+  end
 end

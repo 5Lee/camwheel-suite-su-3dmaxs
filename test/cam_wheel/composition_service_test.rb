@@ -20,4 +20,24 @@ class CamWheelCompositionServiceTest < Minitest::Test
 
     assert_equal "diagonal", next_style
   end
+
+  def test_display_ratio_label_uses_preset_name_for_standard_ratio
+    label = CamWheel::Services::CompositionService.display_ratio_label(
+      mode: "4:3",
+      ratio_width: 4.0,
+      ratio_height: 3.0
+    )
+
+    assert_equal "4:3", label
+  end
+
+  def test_display_ratio_label_uses_numeric_pair_for_free_ratio
+    label = CamWheel::Services::CompositionService.display_ratio_label(
+      mode: "free",
+      ratio_width: 21.0,
+      ratio_height: 9.0
+    )
+
+    assert_equal "21:9", label
+  end
 end

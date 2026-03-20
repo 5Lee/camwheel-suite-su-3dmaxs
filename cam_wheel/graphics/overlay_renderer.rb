@@ -82,25 +82,42 @@ module CamWheel
         end
 
         def golden_spiral_lines(x:, y:, width:, height:)
-          square = [width, height].min
-          step = square / 4.0
-
-          [
-            Line.new(x + square, y, x + square, y + square),
-            Line.new(x + square, y + square, x + (square - step), y + square),
-            Line.new(x + (square - step), y + square, x + (square - step), y + step),
-            Line.new(x + (square - step), y + step, x + step, y + step),
-            Line.new(x + step, y + step, x + step, y + (square - step)),
-            Line.new(x + step, y + (square - step), x + (square / 2.0), y + (square - step))
-          ]
+          points = logarithmic_spiral_points(x: x, y: y, width: width, height: height)
+          points.each_cons(2).map do |from_point, to_point|
+            Line.new(from_point[0], from_point[1], to_point[0], to_point[1])
+          end
         end
 
-        def draw(view:, frame:, style:, mask_color:, mask_alpha:, line_color:, line_width:)
+        def draw(view:, frame:, style:, mask_color:, mask_alpha:, line_color:, line_width:, ratio_label: nil, style_label: nil)
           draw_masks(view, mask_rectangles(viewport_width: view.vpwidth, viewport_height: view.vpheight, frame: frame), mask_color, mask_alpha)
           draw_lines(view, lines_for(style: style, frame: frame), line_color, line_width)
+          draw_status_label(view, frame, ratio_label, style_label, line_color)
         end
 
         private
+
+        def logarithmic_spiral_points(x:, y:, width:, height:)
+          center_x = x + (width * 0.62)
+          center_y = y + (height * 0.38)
+          max_radius = [width, height].min * 0.46
+          start_angle = -Math::PI / 2.0
+          end_angle = (Math::PI * 2.5)
+          step = Math::PI / 18.0
+
+          points = []
+          angle = start_angle
+
+          while angle <= end_angle
+            turns = (angle - start_angle) / (Math::PI / 2.0)
+            radius = max_radius / (GOLDEN_RATIO**turns)
+            point_x = center_x + (Math.cos(angle) * radius)
+            point_y = center_y + (Math.sin(angle) * radius)
+            points << [point_x.round(2), point_y.round(2)]
+            angle += step
+          end
+
+          points
+        end
 
         def draw_masks(view, rectangles, color, alpha)
           rectangles.each do |rectangle|
@@ -129,6 +146,21 @@ module CamWheel
             ]
             view.draw2d(GL_LINES, points)
           end
+        end
+
+        def draw_status_label(view, frame, ratio_label, style_label, line_color)
+          return if ratio_label.nil? && style_label.nil?
+
+          label = [ratio_label, style_label].compact.join(" · ")
+          view.drawing_color = color_for(line_color, 255)
+          view.draw_text(
+            Geom::Point3d.new(frame.x + 16, frame.y + 16, 0),
+            label,
+            pixel_size: 18,
+            bold: true
+          )
+        rescue StandardError
+          nil
         end
 
         def color_for(hex_color, alpha)
