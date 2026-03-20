@@ -25,12 +25,14 @@ module CamWheel
           dialog.add_action_callback("camWheelSave") do |_action_context, payload|
             save_payload(payload)
             push_payload(dialog)
+            push_notice(dialog, "设置已保存")
             refresh_active_view
           end
 
           dialog.add_action_callback("camWheelReset") do |_action_context|
             reset_defaults
             push_payload(dialog)
+            push_notice(dialog, "已恢复默认设置")
             refresh_active_view
           end
         end
@@ -118,6 +120,11 @@ module CamWheel
           json = JSON.generate(default_payload)
           escaped = json.gsub("\\", "\\\\\\").gsub("'", "\\\\'")
           dialog.execute_script("window.CamWheelSettings.receivePayload(JSON.parse('#{escaped}'));")
+        end
+
+        def push_notice(dialog, message)
+          escaped = message.to_s.gsub("\\", "\\\\\\").gsub("'", "\\\\'")
+          dialog.execute_script("window.CamWheelSettings.showNotice('#{escaped}');")
         end
       end
     end

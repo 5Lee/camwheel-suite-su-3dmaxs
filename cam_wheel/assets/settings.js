@@ -80,6 +80,22 @@ function formatDefaultValue(key, value) {
   return String(value);
 }
 
+let noticeTimer = null;
+
+function showNotice(message) {
+  const notice = document.getElementById("notice");
+  notice.textContent = message;
+  notice.classList.add("is-visible");
+
+  if (noticeTimer) {
+    window.clearTimeout(noticeTimer);
+  }
+
+  noticeTimer = window.setTimeout(() => {
+    notice.classList.remove("is-visible");
+  }, 1800);
+}
+
 function collectPayload() {
   return {
     composition_ratio_mode: document.getElementById("composition_ratio_mode").value,
@@ -97,6 +113,9 @@ function collectPayload() {
 window.CamWheelSettings = {
   receivePayload(payload) {
     applyPayload(payload);
+  },
+  showNotice(message) {
+    showNotice(message);
   }
 };
 

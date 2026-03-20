@@ -193,6 +193,28 @@ h1 {
   transform: translateY(-1px);
 }
 
+.notice {
+  position: sticky;
+  bottom: 12px;
+  margin-top: 16px;
+  margin-left: auto;
+  width: fit-content;
+  max-width: min(100%, 320px);
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(31, 36, 48, 0.86);
+  color: #fff;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.notice.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .ghost {
   background: rgba(31, 36, 48, 0.08);
   color: var(--ink);

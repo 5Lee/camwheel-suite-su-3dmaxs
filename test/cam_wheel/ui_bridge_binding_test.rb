@@ -25,4 +25,14 @@ class CamWheelUiBridgeBindingTest < Minitest::Test
     assert_equal 1, dialog.scripts.length
     assert_includes dialog.scripts.first, "receivePayload"
   end
+
+  def test_save_callback_pushes_payload_and_save_notice
+    dialog = FakeDialog.new({}, [])
+
+    CamWheel::UI::UiBridge.bind(dialog)
+    dialog.callbacks.fetch("camWheelSave").call(FakeContext.new(nil), {}.to_json)
+
+    assert dialog.scripts.any? { |script| script.include?("receivePayload") }
+    assert dialog.scripts.any? { |script| script.include?("showNotice") }
+  end
 end

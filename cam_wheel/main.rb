@@ -29,6 +29,7 @@ module CamWheel
       return unless defined?(::UI) && defined?(Sketchup)
 
       build_toolbar
+      build_menu
     end
 
     def toggle_composition_overlay
@@ -58,9 +59,19 @@ module CamWheel
       toolbar.restore
     end
 
+    def build_menu
+      extensions_menu = ::UI.menu("Extensions")
+      submenu = extensions_menu.add_submenu(PLUGIN_NAME)
+      submenu.add_item(penetration_command)
+      submenu.add_item(align_view_command)
+      submenu.add_item(composition_overlay_command)
+      submenu.add_item(settings_command)
+    end
+
     def penetration_command
       @penetration_command ||= begin
         command = ::UI::Command.new("物体穿透") { Sketchup.active_model.select_tool(Tools::PenetrationTool.new) }
+        command.menu_text = "物体穿透"
         command.tooltip = "物体穿透"
         command.status_bar_text = "沿当前视线穿过前方第一个遮挡物"
         apply_command_icons(command, "penetration.svg")
@@ -71,6 +82,7 @@ module CamWheel
     def align_view_command
       @align_view_command ||= begin
         command = ::UI::Command.new("视角对齐") { Sketchup.active_model.select_tool(Tools::AlignViewTool.new) }
+        command.menu_text = "视角对齐"
         command.tooltip = "视角对齐"
         command.status_bar_text = "点击一个可见面以对齐当前视角"
         apply_command_icons(command, "align_view.svg")
@@ -81,6 +93,7 @@ module CamWheel
     def composition_overlay_command
       @composition_overlay_command ||= begin
         command = ::UI::Command.new("构图辅助") { toggle_composition_overlay }
+        command.menu_text = "构图辅助"
         command.tooltip = "构图辅助"
         command.status_bar_text = "切换 CamWheel 构图辅助"
         apply_command_icons(command, "composition.svg")
@@ -91,6 +104,7 @@ module CamWheel
     def settings_command
       @settings_command ||= begin
         command = ::UI::Command.new("设置") { show_settings }
+        command.menu_text = "设置"
         command.tooltip = "设置"
         command.status_bar_text = "打开 CamWheel 设置"
         apply_command_icons(command, "settings.svg")
