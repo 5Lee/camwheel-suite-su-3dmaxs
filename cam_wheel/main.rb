@@ -26,7 +26,7 @@ module CamWheel
       return if defined?(@booted) && @booted
 
       @booted = true
-      return unless defined?(UI) && defined?(Sketchup)
+      return unless defined?(::UI) && defined?(Sketchup)
 
       build_toolbar
     end
@@ -50,7 +50,7 @@ module CamWheel
     private
 
     def build_toolbar
-      toolbar = UI::Toolbar.new(PLUGIN_NAME)
+      toolbar = ::UI::Toolbar.new(PLUGIN_NAME)
       toolbar.add_item(penetration_command)
       toolbar.add_item(align_view_command)
       toolbar.add_item(composition_overlay_command)
@@ -60,7 +60,7 @@ module CamWheel
 
     def penetration_command
       @penetration_command ||= begin
-        command = UI::Command.new("物体穿透") { Sketchup.active_model.select_tool(Tools::PenetrationTool.new) }
+        command = ::UI::Command.new("物体穿透") { Sketchup.active_model.select_tool(Tools::PenetrationTool.new) }
         command.tooltip = "物体穿透"
         command.status_bar_text = "沿当前视线穿过前方第一个遮挡物"
         apply_command_icons(command, "penetration.svg")
@@ -70,7 +70,7 @@ module CamWheel
 
     def align_view_command
       @align_view_command ||= begin
-        command = UI::Command.new("视角对齐") { Sketchup.active_model.select_tool(Tools::AlignViewTool.new) }
+        command = ::UI::Command.new("视角对齐") { Sketchup.active_model.select_tool(Tools::AlignViewTool.new) }
         command.tooltip = "视角对齐"
         command.status_bar_text = "点击一个可见面以对齐当前视角"
         apply_command_icons(command, "align_view.svg")
@@ -80,7 +80,7 @@ module CamWheel
 
     def composition_overlay_command
       @composition_overlay_command ||= begin
-        command = UI::Command.new("构图辅助") { toggle_composition_overlay }
+        command = ::UI::Command.new("构图辅助") { toggle_composition_overlay }
         command.tooltip = "构图辅助"
         command.status_bar_text = "切换 CamWheel 构图辅助"
         apply_command_icons(command, "composition.svg")
@@ -90,7 +90,7 @@ module CamWheel
 
     def settings_command
       @settings_command ||= begin
-        command = UI::Command.new("设置") { show_settings }
+        command = ::UI::Command.new("设置") { show_settings }
         command.tooltip = "设置"
         command.status_bar_text = "打开 CamWheel 设置"
         apply_command_icons(command, "settings.svg")

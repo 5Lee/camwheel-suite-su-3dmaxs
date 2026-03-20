@@ -26,14 +26,14 @@ module CamWheel
         end
 
         def build_dialog
-          dialog = HtmlDialog.new(
+          dialog = ::UI::HtmlDialog.new(
             dialog_title: "CamWheel 设置",
             preferences_key: DIALOG_ID,
             scrollable: true,
             resizable: true,
             width: 540,
             height: 760,
-            style: HtmlDialog::STYLE_DIALOG
+            style: ::UI::HtmlDialog::STYLE_DIALOG
           )
           dialog.set_file(File.join(__dir__, "..", "assets", "settings.html"))
           UiBridge.bind(dialog)
