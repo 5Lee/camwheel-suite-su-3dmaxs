@@ -13,7 +13,7 @@ end
 module CamWheel
   module UI
     module UiBridge
-      RATIO_OPTIONS = ["free", "1:1", "4:3", "3:2", "16:9", "9:16", "2.35:1"].freeze
+      RATIO_OPTIONS = ["1:1", "4:3", "3:2", "16:9", "9:16", "2.35:1"].freeze
       STYLE_OPTIONS = %w[rule_of_thirds golden_ratio golden_spiral diagonal].freeze
 
       class << self
@@ -95,7 +95,7 @@ module CamWheel
           case key
           when :composition_free_ratio_width, :composition_free_ratio_height, :overlay_line_width, :overlay_mask_alpha, :penetration_offset
             value.to_f
-          when :align_enable_two_point_perspective
+          when :align_enable_two_point_perspective, :overlay_show_label
             value == true || value.to_s == "true"
           else
             value

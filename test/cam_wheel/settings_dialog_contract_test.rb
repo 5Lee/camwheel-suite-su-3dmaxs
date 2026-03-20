@@ -10,4 +10,10 @@ class CamWheelSettingsDialogContractTest < Minitest::Test
     assert_includes payload.keys, :composition_ratio_mode
     assert_includes payload.keys, :overlay_mask_alpha
   end
+
+  def test_ratio_options_exclude_free
+    payload = CamWheel::UI::UiBridge.default_payload
+
+    refute_includes payload[:ratio_options], "free"
+  end
 end

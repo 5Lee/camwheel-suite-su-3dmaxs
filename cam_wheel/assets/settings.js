@@ -50,8 +50,6 @@ function collectPayload() {
   return {
     composition_ratio_mode: document.getElementById("composition_ratio_mode").value,
     composition_style: document.getElementById("composition_style").value,
-    composition_free_ratio_width: document.getElementById("composition_free_ratio_width").value,
-    composition_free_ratio_height: document.getElementById("composition_free_ratio_height").value,
     overlay_line_color: document.getElementById("overlay_line_color").value,
     overlay_line_width: document.getElementById("overlay_line_width").value,
     overlay_mask_color: document.getElementById("overlay_mask_color").value,

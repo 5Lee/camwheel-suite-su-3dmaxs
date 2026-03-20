@@ -41,6 +41,10 @@ module CamWheel
         self.class.run(model: model)
         view.invalidate if view.respond_to?(:invalidate)
       end
+
+      def resume(view)
+        view.invalidate if view.respond_to?(:invalidate)
+      end
     end
   end
 end

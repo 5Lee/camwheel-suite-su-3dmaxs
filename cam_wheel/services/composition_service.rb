@@ -24,7 +24,7 @@ module CamWheel
       end
 
       STYLE_ORDER = %w[rule_of_thirds golden_ratio golden_spiral diagonal].freeze
-      RATIO_ORDER = %w[free 1:1 4:3 3:2 16:9 9:16 2.35:1].freeze
+      RATIO_ORDER = %w[1:1 4:3 3:2 16:9 9:16 2.35:1].freeze
       PRESET_DIMENSIONS = {
         "1:1" => [1.0, 1.0].freeze,
         "4:3" => [4.0, 3.0].freeze,

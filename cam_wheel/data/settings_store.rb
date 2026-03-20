@@ -23,6 +23,7 @@ module CamWheel
         overlay_line_width: DEFAULT_LINE_WIDTH,
         overlay_mask_color: DEFAULT_MASK_COLOR,
         overlay_mask_alpha: DEFAULT_MASK_ALPHA,
+        overlay_show_label: DEFAULT_OVERLAY_SHOW_LABEL,
         penetration_offset: DEFAULT_PENETRATION_OFFSET,
         align_enable_two_point_perspective: DEFAULT_ALIGN_ENABLE_TWO_POINT_PERSPECTIVE
       }.freeze

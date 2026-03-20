@@ -62,11 +62,8 @@ module CamWheel
       def draw(view)
         return unless @preview
 
+        marker_points = @preview[:polygon]
         screen_point = @preview[:screen]
-        marker_points = self.class.preview_marker_points(
-          screen_x: screen_point[0],
-          screen_y: screen_point[1]
-        )
 
         view.line_width = 2
         view.drawing_color = Sketchup::Color.new(255, 184, 77, 255)
@@ -79,23 +76,45 @@ module CamWheel
       private
 
       def pick_preview(view, x, y)
+        pick_helper = view.pick_helper
+        pick_helper.do_pick(x, y)
+        face = pick_helper.picked_face
+        return nil unless face
+
+        picked_path = first_face_path(pick_helper, face)
         hit = view.model.raytest(view.pickray(x, y), false)
         return nil unless hit
 
         point, path = hit
-        face = extract_face(path)
-        return nil unless face
+        path = picked_path if picked_path
 
         screen = view.screen_coords(point)
         {
           point: point,
           normal: transformed_normal(face.normal, path),
-          screen: [screen.x.to_i, screen.y.to_i]
+          screen: [screen.x.to_i, screen.y.to_i],
+          polygon: face_polygon(view, face, path)
         }
       end
 
-      def extract_face(path)
-        path.last if path.last.is_a?(Sketchup::Face)
+      def face_polygon(view, face, path)
+        points = face.outer_loop.vertices.map { |vertex| transform_point(vertex.position, path) }
+        points.map do |point|
+          screen_point = view.screen_coords(point)
+          [screen_point.x.to_i, screen_point.y.to_i]
+        end
+      rescue StandardError
+        self.class.preview_marker_points(screen_x: view.vpwidth / 2, screen_y: view.vpheight / 2)
+      end
+
+      def first_face_path(pick_helper, face)
+        pick_helper.count.times do |index|
+          next unless pick_helper.leaf_at(index) == face
+
+          return pick_helper.path_at(index)
+        end
+
+        nil
       end
 
       def draw_loop(view, marker_points)
@@ -122,6 +141,14 @@ module CamWheel
         end
 
         normal.transform(transformation)
+      end
+
+      def transform_point(point, path)
+        transformation = path[0...-1].reduce(Geom::Transformation.new) do |memo, entity|
+          entity.respond_to?(:transformation) ? memo * entity.transformation : memo
+        end
+
+        point.transform(transformation)
       end
     end
   end

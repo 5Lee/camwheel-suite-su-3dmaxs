@@ -60,7 +60,7 @@ module CamWheel
 
     def penetration_command
       @penetration_command ||= begin
-        command = ::UI::Command.new("物体穿透") { Tools::PenetrationTool.run }
+        command = ::UI::Command.new("物体穿透") { Sketchup.active_model.select_tool(Tools::PenetrationTool.new) }
         command.tooltip = "物体穿透"
         command.status_bar_text = "沿当前视线穿过前方第一个遮挡物"
         apply_command_icons(command, "penetration.svg")

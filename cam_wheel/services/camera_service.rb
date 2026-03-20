@@ -56,16 +56,25 @@ module CamWheel
           alignment > 0.99 ? [0.0, 1.0, 0.0] : world_up
         end
 
-        def view_direction_for_normal(normal:)
-          normalize_array(normal).map { |component| -component }
+        def view_direction_for_normal(normal:, current_direction: nil)
+          normalized_normal = normalize_array(normal)
+          return normalized_normal if current_direction && dot(normalized_normal, normalize_array(current_direction)) >= 0.0
+
+          normalized_normal.map { |component| -component }
+        end
+
+        def alignment_distance(eye:, point:)
+          distance(eye, point)
         end
 
         def align_view(view:, point:, normal:, distance: nil, enable_two_point_perspective: true)
           return nil unless defined?(Sketchup)
 
-          direction = view_direction_for_normal(normal: vector_to_a(normal))
+          camera = view.camera
+          current_direction = vector_to_a(camera.target - camera.eye)
+          direction = view_direction_for_normal(normal: vector_to_a(normal), current_direction: current_direction)
           up_components = stable_up_vector_components(normal: vector_to_a(normal))
-          view_distance = distance || default_view_distance(view)
+          view_distance = distance || alignment_distance(eye: point_to_a(camera.eye), point: point_to_a(point))
 
           eye = point.offset(Geom::Vector3d.new(
                                -direction[0] * view_distance,

@@ -20,4 +20,8 @@ class CamWheelSettingsStoreTest < Minitest::Test
 
     assert_equal "golden_ratio", CamWheel::Data::SettingsStore.read(:composition_style)
   end
+
+  def test_default_line_color_is_green
+    assert_equal "#00FF66", CamWheel::Data::SettingsStore.read(:overlay_line_color)
+  end
 end

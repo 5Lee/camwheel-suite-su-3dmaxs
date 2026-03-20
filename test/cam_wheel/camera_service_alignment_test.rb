@@ -11,4 +11,22 @@ class CamWheelCameraServiceAlignmentTest < Minitest::Test
 
     assert_equal [0.0, 0.0, -1.0], direction
   end
+
+  def test_view_direction_preserves_current_view_side
+    direction = CamWheel::Services::CameraService.view_direction_for_normal(
+      normal: [0.0, 0.0, 1.0],
+      current_direction: [0.0, 0.0, 1.0]
+    )
+
+    assert_equal [0.0, 0.0, 1.0], direction
+  end
+
+  def test_alignment_distance_uses_eye_to_hit_point
+    distance = CamWheel::Services::CameraService.alignment_distance(
+      eye: [0.0, 0.0, 100.0],
+      point: [0.0, 0.0, 0.0]
+    )
+
+    assert_equal 100.0, distance
+  end
 end

@@ -40,4 +40,10 @@ class CamWheelCompositionServiceTest < Minitest::Test
 
     assert_equal "21:9", label
   end
+
+  def test_next_ratio_cycles_without_free_ratio
+    next_ratio = CamWheel::Services::CompositionService.next_ratio("2.35:1")
+
+    assert_equal "1:1", next_ratio
+  end
 end

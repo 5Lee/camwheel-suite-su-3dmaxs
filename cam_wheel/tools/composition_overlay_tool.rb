@@ -77,8 +77,8 @@ module CamWheel
           mask_alpha: settings_store.read(:overlay_mask_alpha),
           line_color: settings_store.read(:overlay_line_color),
           line_width: settings_store.read(:overlay_line_width),
-          ratio_label: payload[:ratio_label],
-          style_label: payload[:style_label]
+          ratio_label: settings_store.read(:overlay_show_label) ? payload[:ratio_label] : nil,
+          style_label: settings_store.read(:overlay_show_label) ? payload[:style_label] : nil
         )
       end
 
@@ -104,8 +104,13 @@ module CamWheel
         menu.add_item("对角线") { set_style("diagonal") }
         menu.add_separator
         menu.add_item("切换比例") { cycle_ratio(Sketchup.active_model.active_view) }
+        menu.add_item(toggle_label_menu_text) { toggle_label_visibility }
         menu.add_item("打开设置") { CamWheel.show_settings }
         menu.add_item("关闭构图辅助") { CamWheel.toggle_composition_overlay }
+      end
+
+      def resume(view)
+        view.invalidate if view
       end
 
       private
@@ -159,6 +164,16 @@ module CamWheel
       def set_style(style)
         settings_store.write(:composition_style, style)
         Sketchup.active_model.active_view.invalidate
+      end
+
+      def toggle_label_visibility
+        current = settings_store.read(:overlay_show_label)
+        settings_store.write(:overlay_show_label, !current)
+        Sketchup.active_model.active_view.invalidate
+      end
+
+      def toggle_label_menu_text
+        settings_store.read(:overlay_show_label) ? "隐藏文字" : "显示文字"
       end
 
       def settings_store
