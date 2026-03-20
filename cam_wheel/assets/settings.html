@@ -16,6 +16,15 @@
 
       <section class="card">
         <div class="section-head">
+          <h2>默认参数</h2>
+          <p>这里展示插件的出厂默认值，方便对照你当前修改后的配置。</p>
+        </div>
+
+        <div id="defaults_summary" class="defaults-grid"></div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
           <h2>构图辅助</h2>
           <p>定义默认画幅与参考线表现。</p>
         </div>
@@ -58,6 +67,11 @@
           <label class="field">
             <span>遮罩透明度</span>
             <input id="overlay_mask_alpha" type="number" min="0" max="1" step="0.05">
+          </label>
+
+          <label class="field checkbox">
+            <input id="overlay_show_label" type="checkbox">
+            <span>显示当前比例和构图线文字</span>
           </label>
         </div>
       </section>

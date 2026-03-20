@@ -24,4 +24,22 @@ class CamWheelCameraServicePenetrationTest < Minitest::Test
 
     assert_equal 20.0, distance
   end
+
+  def test_first_object_exit_distance_stops_at_first_object_boundary
+    probe_hits = {
+      11.0 => { id: :wall, distance: 20.0 },
+      21.0 => { id: :chair, distance: 35.0 }
+    }
+
+    distance = CamWheel::Services::CameraService.first_object_exit_distance(
+      entry_distance: 10.0,
+      blocker_id: :wall,
+      sample_step: 1.0,
+      max_distance: 50.0
+    ) do |probe_distance|
+      probe_hits[probe_distance]
+    end
+
+    assert_equal 20.0, distance
+  end
 end

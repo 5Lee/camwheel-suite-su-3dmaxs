@@ -96,6 +96,35 @@ h1 {
   gap: 14px;
 }
 
+.defaults-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.default-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
+}
+
+.default-item strong,
+.default-item span {
+  display: block;
+}
+
+.default-item strong {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.default-item span {
+  font-size: 18px;
+  font-weight: 600;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -180,6 +209,10 @@ h1 {
   }
 
   .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .defaults-grid {
     grid-template-columns: 1fr;
   }
 

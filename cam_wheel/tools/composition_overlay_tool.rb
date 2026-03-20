@@ -113,6 +113,26 @@ module CamWheel
         view.invalidate if view
       end
 
+      def suspend(view)
+        view.invalidate if view
+      end
+
+      def onMouseWheel(_flags, _delta, _x, _y, view)
+        view.invalidate if view
+      end
+
+      def onMouseMove(_flags, _x, _y, view)
+        view.invalidate if view
+      end
+
+      def onMButtonUp(_flags, _x, _y, view)
+        view.invalidate if view
+      end
+
+      def onMouseEnter(view)
+        view.invalidate if view
+      end
+
       private
 
       def current_frame_payload(view)

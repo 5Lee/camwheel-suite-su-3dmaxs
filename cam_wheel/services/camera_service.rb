@@ -101,22 +101,55 @@ module CamWheel
 
           hit_point, path = hit
           entry_distance = distance(origin, point_to_a(hit_point))
+          blocker_id = blocking_entity_identifier(path)
           bounds = world_bounds_for(path)
           return shift_camera(view, direction, entry_distance + safety_offset) unless bounds
 
-          exit_hit = ray_box_exit_distance(
-            origin: origin,
-            direction: direction,
-            min_corner: point_to_a(bounds.min),
-            max_corner: point_to_a(bounds.max)
-          )
+          max_distance = entry_distance + bounds_diagonal(bounds) + safety_offset + 1.0
+          sample_step = sample_step_for(bounds, safety_offset)
+          exit_hit = first_object_exit_distance(
+            entry_distance: entry_distance,
+            blocker_id: blocker_id,
+            sample_step: sample_step,
+            max_distance: max_distance
+          ) do |probe_distance|
+            probe_point = camera.eye.offset(Geom::Vector3d.new(
+                                              direction[0] * probe_distance,
+                                              direction[1] * probe_distance,
+                                              direction[2] * probe_distance
+                                            ))
+            probe_hit = view.model.raytest([probe_point, Geom::Vector3d.new(*direction)], false)
+            next nil unless probe_hit
 
-          final_distance = exit_distance(
-            spans: [[entry_distance, exit_hit || entry_distance]],
-            safety_offset: safety_offset
-          )
+            probe_hit_point, probe_path = probe_hit
+            {
+              id: blocking_entity_identifier(probe_path),
+              distance: probe_distance + distance(point_to_a(probe_point), point_to_a(probe_hit_point))
+            }
+          end
+
+          final_distance = exit_distance(spans: [[entry_distance, exit_hit || entry_distance]], safety_offset: safety_offset)
 
           shift_camera(view, direction, final_distance)
+        end
+
+        def first_object_exit_distance(entry_distance:, blocker_id:, sample_step:, max_distance:)
+          probe_distance = entry_distance + sample_step
+          last_same_distance = entry_distance
+
+          while probe_distance <= max_distance
+            sample = yield(probe_distance)
+            break if sample.nil?
+
+            if sample[:id] == blocker_id
+              last_same_distance = sample[:distance]
+              probe_distance = [sample[:distance] + sample_step, probe_distance + sample_step].max
+            else
+              break
+            end
+          end
+
+          last_same_distance
         end
 
         private
@@ -172,6 +205,23 @@ module CamWheel
 
         def vector_to_a(vector)
           [vector.x.to_f, vector.y.to_f, vector.z.to_f]
+        end
+
+        def blocking_entity_identifier(path)
+          return nil if path.nil? || path.empty?
+
+          container = path[0...-1].reverse.find { |item| item.respond_to?(:persistent_id) }
+          entity = container || path.last
+          entity.respond_to?(:persistent_id) ? entity.persistent_id : entity.object_id
+        end
+
+        def bounds_diagonal(bounds)
+          distance(point_to_a(bounds.min), point_to_a(bounds.max))
+        end
+
+        def sample_step_for(bounds, safety_offset)
+          diagonal = bounds_diagonal(bounds)
+          [[diagonal / 12.0, 1.0].max, [safety_offset / 2.0, 1.0].max].min
         end
 
         def default_view_distance(view)

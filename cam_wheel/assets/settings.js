@@ -5,6 +5,15 @@ const STYLE_LABELS = {
   diagonal: "对角线"
 };
 
+const DEFAULT_LABELS = {
+  landscape_ratio: "横向比例",
+  portrait_ratio: "竖向比例",
+  composition_style: "默认线型",
+  overlay_line_color: "默认线色",
+  overlay_show_label: "默认文字",
+  penetration_offset: "默认穿透偏移"
+};
+
 function requestBridge(action, payload) {
   return new Promise((resolve) => {
     if (!window.sketchup || !window.sketchup[action]) {
@@ -31,6 +40,7 @@ function setSelectOptions(select, values, labelMap = {}) {
 function applyPayload(payload) {
   setSelectOptions(document.getElementById("composition_ratio_mode"), payload.ratio_options);
   setSelectOptions(document.getElementById("composition_style"), payload.style_options, STYLE_LABELS);
+  renderDefaultsSummary(payload.defaults_summary || {});
 
   Object.entries(payload).forEach(([key, value]) => {
     const element = document.getElementById(key);
@@ -46,6 +56,31 @@ function applyPayload(payload) {
   });
 }
 
+function renderDefaultsSummary(summary) {
+  const container = document.getElementById("defaults_summary");
+  container.innerHTML = "";
+
+  Object.entries(summary).forEach(([key, value]) => {
+    const item = document.createElement("div");
+    item.className = "default-item";
+    item.innerHTML = `
+      <strong>${DEFAULT_LABELS[key] || key}</strong>
+      <span>${formatDefaultValue(key, value)}</span>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function formatDefaultValue(key, value) {
+  if (key === "composition_style") {
+    return STYLE_LABELS[value] || value;
+  }
+  if (typeof value === "boolean") {
+    return value ? "开启" : "关闭";
+  }
+  return String(value);
+}
+
 function collectPayload() {
   return {
     composition_ratio_mode: document.getElementById("composition_ratio_mode").value,
@@ -54,6 +89,7 @@ function collectPayload() {
     overlay_line_width: document.getElementById("overlay_line_width").value,
     overlay_mask_color: document.getElementById("overlay_mask_color").value,
     overlay_mask_alpha: document.getElementById("overlay_mask_alpha").value,
+    overlay_show_label: document.getElementById("overlay_show_label").checked,
     penetration_offset: document.getElementById("penetration_offset").value,
     align_enable_two_point_perspective: document.getElementById("align_enable_two_point_perspective").checked
   };

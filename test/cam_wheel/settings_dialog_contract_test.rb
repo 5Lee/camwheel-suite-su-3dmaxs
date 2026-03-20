@@ -16,4 +16,11 @@ class CamWheelSettingsDialogContractTest < Minitest::Test
 
     refute_includes payload[:ratio_options], "free"
   end
+
+  def test_payload_includes_defaults_summary_and_optional_flags
+    payload = CamWheel::UI::UiBridge.default_payload
+
+    assert_includes payload.keys, :defaults_summary
+    assert_includes payload.keys, :overlay_show_label
+  end
 end

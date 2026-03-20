@@ -40,6 +40,7 @@ module CamWheel
           settings = Data::SettingsStore.defaults(orientation: orientation)
 
           settings.merge(
+            defaults_summary: defaults_summary,
             ratio_options: RATIO_OPTIONS,
             style_options: STYLE_OPTIONS
           )
@@ -100,6 +101,17 @@ module CamWheel
           else
             value
           end
+        end
+
+        def defaults_summary
+          {
+            landscape_ratio: Data::SettingsStore.default_ratio(:landscape),
+            portrait_ratio: Data::SettingsStore.default_ratio(:portrait),
+            composition_style: Data::SettingsStore::DEFAULTS.fetch(:composition_style),
+            overlay_line_color: Data::SettingsStore::DEFAULTS.fetch(:overlay_line_color),
+            overlay_show_label: Data::SettingsStore::DEFAULTS.fetch(:overlay_show_label),
+            penetration_offset: Data::SettingsStore::DEFAULTS.fetch(:penetration_offset)
+          }
         end
       end
     end
