@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CamWheel Settings</title>
+    <link rel="stylesheet" href="settings.css">
+  </head>
+  <body>
+    <main class="panel">
+      <header class="hero">
+        <p class="eyebrow">CamWheel</p>
+        <h1>构图辅助仪</h1>
+        <p class="intro">相机工具的基准刻度盘。比例、线型、遮罩和穿透安全距都在这里统一控制。</p>
+      </header>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>构图辅助</h2>
+          <p>定义默认画幅与参考线表现。</p>
+        </div>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>比例预设</span>
+            <select id="composition_ratio_mode"></select>
+          </label>
+
+          <label class="field">
+            <span>构图线型</span>
+            <select id="composition_style"></select>
+          </label>
+
+          <label class="field">
+            <span>自由比例宽</span>
+            <input id="composition_free_ratio_width" type="number" min="0.1" step="0.1">
+          </label>
+
+          <label class="field">
+            <span>自由比例高</span>
+            <input id="composition_free_ratio_height" type="number" min="0.1" step="0.1">
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>叠加显示</h2>
+          <p>控制辅助线与遮罩的观感。</p>
+        </div>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>线条颜色</span>
+            <input id="overlay_line_color" type="color">
+          </label>
+
+          <label class="field">
+            <span>线条粗细</span>
+            <input id="overlay_line_width" type="number" min="1" max="8" step="1">
+          </label>
+
+          <label class="field">
+            <span>遮罩颜色</span>
+            <input id="overlay_mask_color" type="color">
+          </label>
+
+          <label class="field">
+            <span>遮罩透明度</span>
+            <input id="overlay_mask_alpha" type="number" min="0" max="1" step="0.05">
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>相机行为</h2>
+          <p>调整视角推进和对齐后的默认状态。</p>
+        </div>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>穿透安全偏移</span>
+            <input id="penetration_offset" type="number" min="1" step="1">
+          </label>
+
+          <label class="field checkbox">
+            <input id="align_enable_two_point_perspective" type="checkbox">
+            <span>视角对齐后自动进入两点透视</span>
+          </label>
+        </div>
+      </section>
+
+      <footer class="actions">
+        <button id="reset" type="button" class="ghost">恢复默认</button>
+        <button id="save" type="button" class="primary">保存设置</button>
+      </footer>
+    </main>
+
+    <script src="settings.js"></script>
+  </body>
+</html>

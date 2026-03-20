@@ -4,17 +4,20 @@ constants_file = File.join(__dir__, "constants")
 composition_tool_file = File.join(__dir__, "tools", "composition_overlay_tool")
 penetration_tool_file = File.join(__dir__, "tools", "penetration_tool")
 align_view_tool_file = File.join(__dir__, "tools", "align_view_tool")
+settings_dialog_file = File.join(__dir__, "ui", "settings_dialog")
 
 if defined?(Sketchup)
   Sketchup.require(constants_file)
   Sketchup.require(composition_tool_file)
   Sketchup.require(penetration_tool_file)
   Sketchup.require(align_view_tool_file)
+  Sketchup.require(settings_dialog_file)
 else
   require constants_file
   require composition_tool_file
   require penetration_tool_file
   require align_view_tool_file
+  require settings_dialog_file
 end
 
 module CamWheel
@@ -41,7 +44,7 @@ module CamWheel
     end
 
     def show_settings
-      UI.messagebox("设置面板将在后续任务中接入。")
+      UI::SettingsDialog.show
     end
 
     private
@@ -51,6 +54,7 @@ module CamWheel
       toolbar.add_item(penetration_command)
       toolbar.add_item(align_view_command)
       toolbar.add_item(composition_overlay_command)
+      toolbar.add_item(settings_command)
       toolbar.restore
     end
 
@@ -77,6 +81,15 @@ module CamWheel
         command = UI::Command.new("构图辅助") { toggle_composition_overlay }
         command.tooltip = "构图辅助"
         command.status_bar_text = "切换 CamWheel 构图辅助"
+        command
+      end
+    end
+
+    def settings_command
+      @settings_command ||= begin
+        command = UI::Command.new("设置") { show_settings }
+        command.tooltip = "设置"
+        command.status_bar_text = "打开 CamWheel 设置"
         command
       end
     end
