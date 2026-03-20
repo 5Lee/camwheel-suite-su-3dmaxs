@@ -2,13 +2,19 @@
 
 constants_file = File.join(__dir__, "constants")
 composition_tool_file = File.join(__dir__, "tools", "composition_overlay_tool")
+penetration_tool_file = File.join(__dir__, "tools", "penetration_tool")
+align_view_tool_file = File.join(__dir__, "tools", "align_view_tool")
 
 if defined?(Sketchup)
   Sketchup.require(constants_file)
   Sketchup.require(composition_tool_file)
+  Sketchup.require(penetration_tool_file)
+  Sketchup.require(align_view_tool_file)
 else
   require constants_file
   require composition_tool_file
+  require penetration_tool_file
+  require align_view_tool_file
 end
 
 module CamWheel
@@ -42,8 +48,28 @@ module CamWheel
 
     def build_toolbar
       toolbar = UI::Toolbar.new(PLUGIN_NAME)
+      toolbar.add_item(penetration_command)
+      toolbar.add_item(align_view_command)
       toolbar.add_item(composition_overlay_command)
       toolbar.restore
+    end
+
+    def penetration_command
+      @penetration_command ||= begin
+        command = UI::Command.new("物体穿透") { Sketchup.active_model.select_tool(Tools::PenetrationTool.new) }
+        command.tooltip = "物体穿透"
+        command.status_bar_text = "沿当前视线穿过前方第一个遮挡物"
+        command
+      end
+    end
+
+    def align_view_command
+      @align_view_command ||= begin
+        command = UI::Command.new("视角对齐") { Sketchup.active_model.select_tool(Tools::AlignViewTool.new) }
+        command.tooltip = "视角对齐"
+        command.status_bar_text = "点击一个可见面以对齐当前视角"
+        command
+      end
     end
 
     def composition_overlay_command
