@@ -26,9 +26,9 @@ module CamWheel
         end
 
         def export_current_view(view:, ratio_width:, ratio_height:, preset:, hide_overlay:)
-          return false unless defined?(Sketchup) && defined?(UI)
+          return false unless defined?(Sketchup) && defined?(::UI)
 
-          path = UI.savepanel("导出构图图片", nil, "camwheel-#{preset}.png")
+          path = ::UI.savepanel("导出构图图片", nil, "camwheel-#{preset}.png")
           return false unless path
 
           width, height = dimensions_for(preset: preset, ratio_width: ratio_width, ratio_height: ratio_height)
