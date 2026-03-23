@@ -72,7 +72,7 @@ module CamWheel
 
     def penetration_command
       @penetration_command ||= begin
-        command = ::UI::Command.new("物体穿透") { Sketchup.active_model.select_tool(Tools::PenetrationTool.new) }
+        command = ::UI::Command.new("物体穿透") { Sketchup.active_model.select_tool(penetration_tool) }
         command.menu_text = "物体穿透"
         command.tooltip = "物体穿透"
         command.status_bar_text = "沿当前视线穿过前方第一个遮挡物"
@@ -83,7 +83,7 @@ module CamWheel
 
     def align_view_command
       @align_view_command ||= begin
-        command = ::UI::Command.new("视角对齐") { Sketchup.active_model.select_tool(Tools::AlignViewTool.new) }
+        command = ::UI::Command.new("视角对齐") { Sketchup.active_model.select_tool(align_view_tool) }
         command.menu_text = "视角对齐"
         command.tooltip = "视角对齐"
         command.status_bar_text = "点击一个可见面以对齐当前视角"
@@ -127,6 +127,14 @@ module CamWheel
 
     def composition_overlay_tool
       @composition_overlay_tool ||= Tools::CompositionOverlayTool.new
+    end
+
+    def penetration_tool
+      @penetration_tool ||= Tools::PenetrationTool.new
+    end
+
+    def align_view_tool
+      @align_view_tool ||= Tools::AlignViewTool.new
     end
 
     def toggle_two_point_perspective

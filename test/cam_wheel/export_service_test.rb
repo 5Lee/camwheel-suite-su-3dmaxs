@@ -23,4 +23,24 @@ class CamWheelExportServiceTest < Minitest::Test
 
     assert_equal [1440, 2560], [width, height]
   end
+
+  def test_default_filename_uses_model_name_and_timestamp
+    filename = CamWheel::Services::ExportService.send(
+      :default_filename,
+      model_path: "/tmp/My House.skp",
+      exported_at: Time.new(2026, 3, 23, 15, 30, 45, "+08:00")
+    )
+
+    assert_equal "My House-20260323-153045.png", filename
+  end
+
+  def test_default_filename_falls_back_when_model_has_not_been_saved
+    filename = CamWheel::Services::ExportService.send(
+      :default_filename,
+      model_path: "",
+      exported_at: Time.new(2026, 3, 23, 15, 30, 45, "+08:00")
+    )
+
+    assert_equal "camwheel-20260323-153045.png", filename
+  end
 end

@@ -24,4 +24,8 @@ class CamWheelSettingsStoreTest < Minitest::Test
   def test_default_line_color_is_green
     assert_equal "#00FF66", CamWheel::Data::SettingsStore.read(:overlay_line_color)
   end
+
+  def test_default_vcb_input_mode_is_fov
+    assert_equal "fov", CamWheel::Data::SettingsStore.read(:composition_vcb_input_mode)
+  end
 end

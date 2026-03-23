@@ -67,7 +67,7 @@ module CamWheel
           distance(eye, point)
         end
 
-        def align_view(view:, point:, normal:, distance: nil, enable_two_point_perspective: true)
+        def align_view(view:, point:, normal:, distance: nil, enable_two_point_perspective: false)
           return nil unless defined?(Sketchup)
 
           camera = view.camera
@@ -83,8 +83,7 @@ module CamWheel
                              ))
           up = Geom::Vector3d.new(*up_components)
 
-          view.camera.set(eye, point, up)
-          view.invalidate
+          apply_camera(view: view, eye: eye, target: point, up: up)
           enable_two_point_perspective!(view) if enable_two_point_perspective
           true
         end
@@ -153,6 +152,19 @@ module CamWheel
         end
 
         private
+
+        def apply_camera(view:, eye:, target:, up:)
+          camera = view.camera
+
+          if camera.respond_to?(:is_2d?) && camera.is_2d? && defined?(Sketchup::Camera)
+            fov = camera.respond_to?(:fov) ? camera.fov : 30.0
+            view.camera = Sketchup::Camera.new(eye, target, up, true, fov)
+          else
+            camera.set(eye, target, up)
+          end
+
+          view.invalidate
+        end
 
         def shift_camera(view, direction, distance_value)
           camera = view.camera
@@ -232,13 +244,37 @@ module CamWheel
         def enable_two_point_perspective!(view)
           return unless defined?(Sketchup)
 
-          if view.camera.respond_to?(:perspective=)
+          begin
             view.camera.perspective = true
+          rescue StandardError
+            nil
           end
 
-          Sketchup.send_action("viewTwoPointPerspective:") if Sketchup.respond_to?(:send_action)
+          trigger_two_point_perspective
         rescue StandardError
           nil
+        end
+
+        def trigger_two_point_perspective
+          action = proc do
+            Sketchup.send_action("viewTwoPointPerspective:")
+          rescue StandardError
+            nil
+          end
+
+          if mac_platform? && defined?(::UI) && ::UI.respond_to?(:start_timer)
+            ::UI.start_timer(0, false, &action)
+          else
+            action.call
+          end
+        end
+
+        def mac_platform?
+          return false unless Sketchup.respond_to?(:platform)
+
+          Sketchup.platform == :platform_osx
+        rescue StandardError
+          false
         end
       end
     end

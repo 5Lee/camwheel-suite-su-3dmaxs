@@ -28,7 +28,7 @@ module CamWheel
             if moved_distance
               "CamWheel 物体穿透完成"
             else
-              "CamWheel 未检测到可穿透物体"
+              "CamWheel 前方中心没有物体"
             end
 
           moved_distance ? :moved : :no_hit
@@ -44,6 +44,10 @@ module CamWheel
 
       def resume(view)
         view.invalidate if view.respond_to?(:invalidate)
+      end
+
+      def onSetCursor
+        false
       end
     end
   end

@@ -16,6 +16,7 @@ module CamWheel
     class SettingsStore
       DEFAULTS = {
         composition_ratio_mode: nil,
+        composition_vcb_input_mode: DEFAULT_COMPOSITION_VCB_INPUT_MODE,
         composition_free_ratio_width: DEFAULT_FREE_RATIO_WIDTH,
         composition_free_ratio_height: DEFAULT_FREE_RATIO_HEIGHT,
         composition_style: DEFAULT_COMPOSITION_STYLE,
@@ -25,8 +26,7 @@ module CamWheel
         overlay_mask_color: DEFAULT_MASK_COLOR,
         overlay_mask_alpha: DEFAULT_MASK_ALPHA,
         overlay_show_label: DEFAULT_OVERLAY_SHOW_LABEL,
-        penetration_offset: DEFAULT_PENETRATION_OFFSET,
-        align_enable_two_point_perspective: DEFAULT_ALIGN_ENABLE_TWO_POINT_PERSPECTIVE
+        penetration_offset: DEFAULT_PENETRATION_OFFSET
       }.freeze
 
       class << self

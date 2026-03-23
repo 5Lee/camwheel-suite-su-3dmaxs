@@ -82,6 +82,21 @@ function formatDefaultValue(key, value) {
 
 let noticeTimer = null;
 
+function clearNotice() {
+  const notice = document.getElementById("notice");
+  if (!notice) {
+    return;
+  }
+
+  if (noticeTimer) {
+    window.clearTimeout(noticeTimer);
+    noticeTimer = null;
+  }
+
+  notice.classList.remove("is-visible");
+  notice.textContent = "";
+}
+
 function showNotice(message) {
   const notice = document.getElementById("notice");
   notice.textContent = message;
@@ -91,9 +106,7 @@ function showNotice(message) {
     window.clearTimeout(noticeTimer);
   }
 
-  noticeTimer = window.setTimeout(() => {
-    notice.classList.remove("is-visible");
-  }, 1800);
+  noticeTimer = window.setTimeout(clearNotice, 1800);
 }
 
 function collectPayload() {
@@ -105,8 +118,7 @@ function collectPayload() {
     overlay_mask_color: document.getElementById("overlay_mask_color").value,
     overlay_mask_alpha: document.getElementById("overlay_mask_alpha").value,
     overlay_show_label: document.getElementById("overlay_show_label").checked,
-    penetration_offset: document.getElementById("penetration_offset").value,
-    align_enable_two_point_perspective: document.getElementById("align_enable_two_point_perspective").checked
+    penetration_offset: document.getElementById("penetration_offset").value
   };
 }
 
@@ -126,5 +138,13 @@ document.getElementById("save").addEventListener("click", () => {
 document.getElementById("reset").addEventListener("click", () => {
   requestBridge("camWheelReset");
 });
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    clearNotice();
+  }
+});
+
+window.addEventListener("pagehide", clearNotice);
 
 requestBridge("camWheelReady");

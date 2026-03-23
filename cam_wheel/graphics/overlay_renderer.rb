@@ -24,6 +24,9 @@ module CamWheel
       end
 
       GOLDEN_RATIO = ((1.0 + Math.sqrt(5.0)) / 2.0).freeze
+      GOLDEN_SPIRAL_RATE = ((2.0 * Math.log(GOLDEN_RATIO)) / Math::PI).freeze
+      GOLDEN_SPIRAL_SEGMENTS = 8
+      SMOOTH_SPIRAL_SEGMENTS = 96
 
       class << self
         def mask_rectangles(viewport_width:, viewport_height:, frame:)
@@ -82,7 +85,8 @@ module CamWheel
         end
 
         def golden_spiral_lines(x:, y:, width:, height:, corner: "top_left")
-          points = logarithmic_spiral_points(x: x, y: y, width: width, height: height, corner: corner)
+          frame = golden_spiral_frame(x: x, y: y, width: width, height: height)
+          points = golden_spiral_points(frame: frame, corner: corner)
           points.each_cons(2).map do |from_point, to_point|
             Line.new(from_point[0], from_point[1], to_point[0], to_point[1])
           end
@@ -96,40 +100,220 @@ module CamWheel
 
         private
 
-        def logarithmic_spiral_points(x:, y:, width:, height:, corner:)
-          center_x = x + (width * 0.62)
-          center_y = y + (height * 0.38)
-          max_radius = [width, height].min * 0.46
-          start_angle = -Math::PI / 2.0
-          end_angle = (Math::PI * 2.5)
-          step = Math::PI / 18.0
+        def golden_spiral_frame(x:, y:, width:, height:)
+          rect_width = width.to_f
+          rect_height = height.to_f
 
-          points = []
-          angle = start_angle
-
-          while angle <= end_angle
-            turns = (angle - start_angle) / (Math::PI / 2.0)
-            radius = max_radius / (GOLDEN_RATIO**turns)
-            point_x = center_x + (Math.cos(angle) * radius)
-            point_y = center_y + (Math.sin(angle) * radius)
-            points << [point_x.round(2), point_y.round(2)]
-            angle += step
+          if rect_width >= rect_height
+            spiral_width = [rect_width, rect_height * GOLDEN_RATIO].min
+            spiral_height = spiral_width / GOLDEN_RATIO
+          else
+            spiral_height = [rect_height, rect_width * GOLDEN_RATIO].min
+            spiral_width = spiral_height / GOLDEN_RATIO
           end
 
-          orient_points(points, x: x, y: y, width: width, height: height, corner: corner)
+          Rectangle.new(
+            x + ((rect_width - spiral_width) / 2.0),
+            y + ((rect_height - spiral_height) / 2.0),
+            spiral_width,
+            spiral_height
+          )
         end
 
-        def orient_points(points, x:, y:, width:, height:, corner:)
-          case corner
-          when "top_right"
-            points.map { |px, py| [x + width - (px - x), py] }
-          when "bottom_right"
-            points.map { |px, py| [x + width - (px - x), y + height - (py - y)] }
-          when "bottom_left"
-            points.map { |px, py| [px, y + height - (py - y)] }
+        def golden_spiral_points(frame:, corner:)
+          if frame.width >= frame.height
+            landscape_spiral_points(width: frame.width, height: frame.height, corner: corner).map do |point_x, point_y|
+              [point_x + frame.x, point_y + frame.y]
+            end
           else
-            points
+            rotated_corner = rotated_corner_for_portrait(corner)
+            rotated_points = landscape_spiral_points(
+              width: frame.height,
+              height: frame.width,
+              corner: rotated_corner
+            )
+
+            rotated_points.map do |point_x, point_y|
+              [
+                frame.x + point_y,
+                frame.y + (frame.height - point_x)
+              ]
+            end
           end
+        end
+
+        def landscape_spiral_points(width:, height:, corner:)
+          anchor_points = landscape_base_spiral_points(width: width, height: height)
+          focus = landscape_spiral_focus(width: width, height: height)
+          transformed_points, transformed_focus = transform_spiral_geometry(
+            points: anchor_points,
+            focus: focus,
+            width: width,
+            height: height,
+            corner: corner
+          )
+
+          smooth_spiral_points(points: transformed_points, focus: transformed_focus)
+        end
+
+        def landscape_base_spiral_points(width:, height:)
+          remaining = Rectangle.new(0.0, 0.0, width.to_f, height.to_f)
+          side_sequence = %i[left top right bottom]
+          points = []
+          step_index = 0
+
+          while remaining.width > 1.0 && remaining.height > 1.0 && step_index < 12
+            side = side_sequence[step_index % side_sequence.length]
+            square = spiral_square(remaining, side)
+            arc_points = quarter_arc_points(square: square, side: side)
+            points.concat(points.empty? ? arc_points : arc_points.drop(1))
+            remaining = remaining_spiral_rect(remaining, side, square.width)
+            step_index += 1
+          end
+
+          points
+        end
+
+        def landscape_spiral_focus(width:, height:)
+          remaining = Rectangle.new(0.0, 0.0, width.to_f, height.to_f)
+          side_sequence = %i[left top right bottom]
+          step_index = 0
+
+          while remaining.width > 0.01 && remaining.height > 0.01 && step_index < 24
+            side = side_sequence[step_index % side_sequence.length]
+            square = spiral_square(remaining, side)
+            remaining = remaining_spiral_rect(remaining, side, square.width)
+            step_index += 1
+          end
+
+          [remaining.x + (remaining.width / 2.0), remaining.y + (remaining.height / 2.0)]
+        end
+
+        def transform_spiral_geometry(points:, focus:, width:, height:, corner:)
+          transformed_points = case corner
+                               when "bottom_left"
+                                 points.map { |point_x, point_y| [width - point_x, point_y] }
+                               when "top_right"
+                                 points.map { |point_x, point_y| [point_x, height - point_y] }
+                               when "top_left"
+                                 points.map { |point_x, point_y| [width - point_x, height - point_y] }
+                               else
+                                 points
+                               end
+
+          transformed_focus = case corner
+                              when "bottom_left"
+                                [width - focus[0], focus[1]]
+                              when "top_right"
+                                [focus[0], height - focus[1]]
+                              when "top_left"
+                                [width - focus[0], height - focus[1]]
+                              else
+                                focus
+                              end
+
+          [transformed_points, transformed_focus]
+        end
+
+        def smooth_spiral_points(points:, focus:)
+          angles = unwrap_spiral_angles(points: points, focus: focus)
+          radii = points.map do |point_x, point_y|
+            Math.sqrt(((point_x - focus[0])**2) + ((point_y - focus[1])**2))
+          end
+          direction = angles.last >= angles.first ? 1.0 : -1.0
+          slope = -direction * GOLDEN_SPIRAL_RATE
+          intercept = Math.log(radii.first) - (slope * angles.first)
+          theta_start = angles.first
+          theta_end = angles.last
+
+          (0..SMOOTH_SPIRAL_SEGMENTS).map do |step|
+            theta = theta_start + ((theta_end - theta_start) * (step.to_f / SMOOTH_SPIRAL_SEGMENTS))
+            radius = Math.exp(intercept + (slope * theta))
+            [
+              (focus[0] + (Math.cos(theta) * radius)).round(2),
+              (focus[1] + (Math.sin(theta) * radius)).round(2)
+            ]
+          end
+        end
+
+        def unwrap_spiral_angles(points:, focus:)
+          raw_angles = points.map do |point_x, point_y|
+            Math.atan2(point_y - focus[1], point_x - focus[0])
+          end
+
+          raw_angles.each_with_object([]) do |angle, memo|
+            if memo.empty?
+              memo << angle
+              next
+            end
+
+            adjusted = angle
+            adjusted += (2.0 * Math::PI) while adjusted - memo.last < -Math::PI
+            adjusted -= (2.0 * Math::PI) while adjusted - memo.last > Math::PI
+            memo << adjusted
+          end
+        end
+
+        def spiral_square(rect, side)
+          size = [rect.width, rect.height].min
+
+          case side
+          when :left, :top
+            Rectangle.new(rect.x, rect.y, size, size)
+          when :right
+            Rectangle.new(rect.x + rect.width - size, rect.y, size, size)
+          when :bottom
+            Rectangle.new(rect.x, rect.y + rect.height - size, size, size)
+          end
+        end
+
+        def remaining_spiral_rect(rect, side, size)
+          case side
+          when :left
+            Rectangle.new(rect.x + size, rect.y, rect.width - size, rect.height)
+          when :top
+            Rectangle.new(rect.x, rect.y + size, rect.width, rect.height - size)
+          when :right
+            Rectangle.new(rect.x, rect.y, rect.width - size, rect.height)
+          when :bottom
+            Rectangle.new(rect.x, rect.y, rect.width, rect.height - size)
+          end
+        end
+
+        def quarter_arc_points(square:, side:)
+          center_x, center_y, start_angle, end_angle = quarter_arc_definition(square, side)
+          radius = square.width
+
+          (0..GOLDEN_SPIRAL_SEGMENTS).map do |step|
+            angle = start_angle + ((end_angle - start_angle) * (step.to_f / GOLDEN_SPIRAL_SEGMENTS))
+            radians = angle * Math::PI / 180.0
+            [
+              (center_x + (Math.cos(radians) * radius)).round(2),
+              (center_y + (Math.sin(radians) * radius)).round(2)
+            ]
+          end
+        end
+
+        def quarter_arc_definition(square, side)
+          case side
+          when :left
+            [square.x, square.y, 90.0, 0.0]
+          when :top
+            [square.x + square.width, square.y, 180.0, 90.0]
+          when :right
+            [square.x + square.width, square.y + square.height, 270.0, 180.0]
+          when :bottom
+            [square.x, square.y + square.height, 0.0, -90.0]
+          end
+        end
+
+        def rotated_corner_for_portrait(corner)
+          {
+            "top_left" => "top_right",
+            "top_right" => "bottom_right",
+            "bottom_right" => "bottom_left",
+            "bottom_left" => "top_left"
+          }.fetch(corner, "top_right")
         end
 
         def draw_masks(view, rectangles, color, alpha)

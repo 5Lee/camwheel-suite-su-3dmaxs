@@ -40,13 +40,12 @@ module CamWheel
         Services::CameraService.align_view(
           view: view,
           point: preview[:point],
-          normal: preview[:normal],
-          enable_two_point_perspective: Data::SettingsStore.read(:align_enable_two_point_perspective)
+          normal: preview[:normal]
         )
 
         @preview = nil
         view.invalidate
-        Sketchup.active_model.select_tool(nil)
+        finalize_alignment
       end
 
       def onMouseMove(_flags, x, y, view)
@@ -57,6 +56,10 @@ module CamWheel
       def onCancel(_reason, view)
         @preview = nil
         view.invalidate if view
+      end
+
+      def onSetCursor
+        false
       end
 
       def draw(view)
@@ -144,19 +147,41 @@ module CamWheel
       end
 
       def transformed_normal(normal, path)
-        transformation = path[0...-1].reduce(Geom::Transformation.new) do |memo, entity|
-          entity.respond_to?(:transformation) ? memo * entity.transformation : memo
+        normal.transform(path_transformation(path))
+      end
+
+      def finalize_alignment
+        action = proc do
+          Sketchup.active_model.select_tool(nil)
+        rescue StandardError
+          nil
         end
 
-        normal.transform(transformation)
+        if defined?(::UI) && ::UI.respond_to?(:start_timer)
+          ::UI.start_timer(0, false, &action)
+        else
+          action.call
+        end
       end
 
       def transform_point(point, path)
-        transformation = path[0...-1].reduce(Geom::Transformation.new) do |memo, entity|
-          entity.respond_to?(:transformation) ? memo * entity.transformation : memo
+        point.transform(path_transformation(path))
+      end
+
+      def path_transformation(path)
+        return Geom::Transformation.new if path.nil? || path.length < 2
+
+        if defined?(Sketchup::InstancePath)
+          return Sketchup::InstancePath.new(path).transformation
         end
 
-        point.transform(transformation)
+        path[0...-1].reduce(Geom::Transformation.new) do |memo, entity|
+          memo * entity.transformation
+        rescue StandardError
+          memo
+        end
+      rescue StandardError
+        Geom::Transformation.new
       end
     end
   end

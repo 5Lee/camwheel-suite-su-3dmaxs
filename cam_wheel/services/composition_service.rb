@@ -24,12 +24,14 @@ module CamWheel
       end
 
       STYLE_ORDER = %w[rule_of_thirds golden_ratio golden_spiral diagonal].freeze
-      RATIO_ORDER = %w[1:1 4:3 3:2 16:9 9:16 2.35:1].freeze
+      RATIO_ORDER = %w[1:1 4:3 3:4 5:4 4:5 3:2 16:9 9:16 2.35:1].freeze
       SPIRAL_CORNER_ORDER = %w[top_left top_right bottom_right bottom_left].freeze
       PRESET_DIMENSIONS = {
         "1:1" => [1.0, 1.0].freeze,
         "4:3" => [4.0, 3.0].freeze,
         "3:4" => [3.0, 4.0].freeze,
+        "5:4" => [5.0, 4.0].freeze,
+        "4:5" => [4.0, 5.0].freeze,
         "3:2" => [3.0, 2.0].freeze,
         "16:9" => [16.0, 9.0].freeze,
         "9:16" => [9.0, 16.0].freeze,

@@ -51,4 +51,26 @@ class CamWheelPenetrationToolTest < Minitest::Test
     assert_equal :moved, result
     assert_equal 123.0, view.invalidated
   end
+
+  def test_run_reports_no_hit_without_moving_camera
+    CamWheel::Services::CameraService.singleton_class.send(:define_method, :penetrate_active_view) do |view:, safety_offset:|
+      view.invalidated = safety_offset
+      nil
+    end
+
+    view = FakeView.new(false)
+    model = FakeModel.new(view)
+
+    result = CamWheel::Tools::PenetrationTool.run(model: model)
+
+    assert_equal :no_hit, result
+    assert_equal 123.0, view.invalidated
+    assert_equal "CamWheel 前方中心没有物体", ::Sketchup.instance_variable_get(:@camwheel_test_status_text)
+  end
+
+  def test_on_set_cursor_defers_to_sketchup_default_cursor
+    tool = CamWheel::Tools::PenetrationTool.new
+
+    assert_equal false, tool.onSetCursor
+  end
 end

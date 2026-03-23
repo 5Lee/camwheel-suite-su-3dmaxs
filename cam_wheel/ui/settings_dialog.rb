@@ -15,8 +15,9 @@ module CamWheel
 
       class << self
         def show
-          dialog.show
-          dialog.bring_to_front if dialog.respond_to?(:bring_to_front)
+          current_dialog = dialog
+          current_dialog.show
+          current_dialog.bring_to_front if current_dialog.respond_to?(:bring_to_front)
         end
 
         private
@@ -37,6 +38,7 @@ module CamWheel
           )
           dialog.set_file(File.join(__dir__, "..", "assets", "settings.html"))
           UiBridge.bind(dialog)
+          dialog.set_on_closed { @dialog = nil } if dialog.respond_to?(:set_on_closed)
           dialog
         end
       end

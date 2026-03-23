@@ -20,6 +20,16 @@ end
 module CamWheel
   module Tools
     class CompositionOverlayTool
+      SAVE_VIEW_ACTION = 21180
+      FULL_FRAME_SENSOR_WIDTH_MM = 36.0
+      MIN_FOV_DEGREES = 1.0
+      MAX_FOV_DEGREES = 179.0
+      MIN_FOCAL_LENGTH_MM = 1.0
+      MAX_FOCAL_LENGTH_MM = 3000.0
+      VCB_INPUT_MODE_LABELS = {
+        "fov" => "视角(FOV)",
+        "focal_length" => "焦段(mm)"
+      }.freeze
       STYLE_LABELS = {
         "rule_of_thirds" => "九宫格",
         "golden_ratio" => "黄金分割",
@@ -65,9 +75,14 @@ module CamWheel
         @active
       end
 
+      def enableVCB?
+        true
+      end
+
       def activate
         @active = true
         Sketchup.status_text = "CamWheel 构图辅助已开启"
+        refresh_vcb(Sketchup.active_model.active_view)
         Sketchup.active_model.active_view.invalidate
       end
 
@@ -110,6 +125,24 @@ module CamWheel
         end
       end
 
+      def onUserText(text, view)
+        mode = current_vcb_input_mode
+        numeric_value =
+          case mode
+          when "focal_length"
+            parse_focal_length_mm(text)
+          else
+            parse_fov_degrees(text)
+          end
+        return invalid_vcb_input(mode) unless numeric_value
+
+        apply_vcb_input(view, mode, numeric_value)
+        refresh_vcb(view)
+        Sketchup.status_text = vcb_status_text(mode, numeric_value)
+        view.invalidate
+        true
+      end
+
       def getMenu(menu)
         menu.add_item("九宫格") { set_style("rule_of_thirds") }
         menu.add_item("黄金分割") { set_style("golden_ratio") }
@@ -123,6 +156,10 @@ module CamWheel
         export_menu.add_item("1K") { export_image("1k") }
         export_menu.add_item("2K") { export_image("2k") }
         export_menu.add_item("4K") { export_image("4k") }
+        menu.add_item("保存视图") { save_view }
+        vcb_menu = menu.add_submenu("VCB输入模式")
+        vcb_menu.add_item("视角(FOV)") { set_vcb_input_mode("fov") }
+        vcb_menu.add_item("焦段(mm)") { set_vcb_input_mode("focal_length") }
         menu.add_separator
         menu.add_item("切换比例") { cycle_ratio(Sketchup.active_model.active_view) }
         menu.add_item(toggle_label_menu_text) { toggle_label_visibility }
@@ -131,7 +168,12 @@ module CamWheel
       end
 
       def resume(view)
+        refresh_vcb(view)
         view.invalidate if view
+      end
+
+      def onSetCursor
+        false
       end
 
       def suspend(view)
@@ -225,6 +267,7 @@ module CamWheel
           preset: preset,
           hide_overlay: method(:suppress_overlay)
         )
+        ::UI.messagebox("图片已导出") if exported && defined?(::UI) && ::UI.respond_to?(:messagebox)
         Sketchup.status_text = exported ? "CamWheel 图片导出完成" : "CamWheel 已取消图片导出"
       end
 
@@ -242,6 +285,14 @@ module CamWheel
         @suppress_overlay = value
       end
 
+      def save_view
+        return unless defined?(Sketchup) && Sketchup.respond_to?(:send_action)
+
+        Sketchup.send_action(save_view_action)
+      rescue StandardError
+        nil
+      end
+
       def style_display_label(style)
         return "黄金螺旋·#{SPIRAL_CORNER_LABELS.fetch(settings_store.read(:composition_spiral_corner), '')}" if style == "golden_spiral"
 
@@ -254,6 +305,193 @@ module CamWheel
 
       def orientation(view)
         view.vpwidth >= view.vpheight ? :landscape : :portrait
+      end
+
+      def save_view_action
+        return "pageAdd:" if mac_platform?
+
+        SAVE_VIEW_ACTION
+      end
+
+      def mac_platform?
+        return false unless defined?(Sketchup) && Sketchup.respond_to?(:platform)
+
+        Sketchup.platform == :platform_osx
+      rescue StandardError
+        false
+      end
+
+      def current_vcb_input_mode
+        settings_store.read(:composition_vcb_input_mode)
+      end
+
+      def set_vcb_input_mode(mode, view = Sketchup.active_model.active_view)
+        settings_store.write(:composition_vcb_input_mode, normalize_vcb_input_mode(mode))
+        refresh_vcb(view)
+        Sketchup.status_text = "CamWheel VCB输入: #{VCB_INPUT_MODE_LABELS.fetch(current_vcb_input_mode)}"
+        view.invalidate if view
+      end
+
+      def parse_focal_length_mm(text)
+        raw = text.to_s.strip
+        return nil if raw.empty?
+
+        numeric_value = parse_plain_numeric(raw)
+        return nil unless numeric_value
+
+        focal_length = numeric_value.to_f
+        return nil if focal_length < MIN_FOCAL_LENGTH_MM || focal_length > MAX_FOCAL_LENGTH_MM
+
+        focal_length
+      end
+
+      def parse_fov_degrees(text)
+        raw = text.to_s.strip
+        return nil if raw.empty?
+
+        value = parse_plain_numeric(raw)
+        return nil unless value
+
+        fov = value.to_f
+        return nil if fov < MIN_FOV_DEGREES || fov > MAX_FOV_DEGREES
+
+        fov
+      end
+
+      def parse_plain_numeric(text)
+        normalized = text.strip.tr(",", ".")
+        return normalized.to_f if normalized.match?(/\A[-+]?\d+(?:\.\d+)?\z/)
+
+        parse_length_value(text)
+      end
+
+      def parse_length_value(text)
+        return nil unless text.respond_to?(:to_l)
+
+        length = text.to_l
+        return length.to_mm if length.respond_to?(:to_mm)
+
+        length.to_f
+      rescue StandardError
+        nil
+      end
+
+      def apply_focal_length(view, focal_length)
+        camera = view.camera
+        camera.perspective = true
+        camera.focal_length = focal_length
+      rescue StandardError
+        camera.fov = focal_length_to_fov(focal_length) if camera.respond_to?(:fov=)
+      end
+
+      def apply_fov(view, fov)
+        camera = view.camera
+        camera.perspective = true
+        camera.fov = fov
+      rescue StandardError
+        camera.focal_length = fov_to_focal_length(fov) if camera.respond_to?(:focal_length=)
+      end
+
+      def apply_vcb_input(view, mode, numeric_value)
+        case mode
+        when "focal_length"
+          apply_focal_length(view, numeric_value)
+        else
+          apply_fov(view, numeric_value)
+        end
+      end
+
+      def focal_length_to_fov(focal_length)
+        radians = 2.0 * Math.atan(FULL_FRAME_SENSOR_WIDTH_MM / (2.0 * focal_length.to_f))
+        radians * 180.0 / Math::PI
+      end
+
+      def fov_to_focal_length(fov)
+        radians = fov.to_f * Math::PI / 180.0
+        FULL_FRAME_SENSOR_WIDTH_MM / (2.0 * Math.tan(radians / 2.0))
+      end
+
+      def refresh_vcb(view)
+        return unless defined?(Sketchup) && view
+
+        mode = current_vcb_input_mode
+        if Sketchup.respond_to?(:vcb_label=)
+          Sketchup.vcb_label =
+            case mode
+            when "focal_length"
+              "焦段(mm)"
+            else
+              "视角(度)"
+            end
+        end
+
+        if Sketchup.respond_to?(:vcb_value=)
+          Sketchup.vcb_value =
+            case mode
+            when "focal_length"
+              format_focal_length_mm(current_focal_length_mm(view.camera))
+            else
+              format_fov_degrees(current_fov_degrees(view.camera))
+            end
+        end
+      rescue StandardError
+        nil
+      end
+
+      def current_focal_length_mm(camera)
+        return camera.focal_length.to_f if camera.respond_to?(:focal_length)
+
+        fov = camera.fov.to_f
+        radians = fov * Math::PI / 180.0
+        FULL_FRAME_SENSOR_WIDTH_MM / (2.0 * Math.tan(radians / 2.0))
+      rescue StandardError
+        35.0
+      end
+
+      def current_fov_degrees(camera)
+        return camera.fov.to_f if camera.respond_to?(:fov)
+
+        focal_length_to_fov(camera.focal_length.to_f)
+      rescue StandardError
+        35.0
+      end
+
+      def format_focal_length_mm(value)
+        number = value.to_f.round(2)
+        return number.to_i.to_s if (number - number.to_i).abs < 0.001
+
+        format("%.2f", number).sub(/0+\z/, "").sub(/\.\z/, "")
+      end
+
+      def format_fov_degrees(value)
+        number = value.to_f.round(2)
+        return number.to_i.to_s if (number - number.to_i).abs < 0.001
+
+        format("%.2f", number).sub(/0+\z/, "").sub(/\.\z/, "")
+      end
+
+      def vcb_status_text(mode, numeric_value)
+        case mode
+        when "focal_length"
+          "CamWheel 焦段切换: #{format_focal_length_mm(numeric_value)}mm"
+        else
+          "CamWheel 视角切换: #{format_fov_degrees(numeric_value)}°"
+        end
+      end
+
+      def invalid_vcb_input(mode)
+        Sketchup.status_text =
+          case mode
+          when "focal_length"
+            "CamWheel 请输入有效焦段"
+          else
+            "CamWheel 请输入有效视角"
+          end
+        false
+      end
+
+      def normalize_vcb_input_mode(mode)
+        VCB_INPUT_MODE_LABELS.key?(mode) ? mode : DEFAULT_COMPOSITION_VCB_INPUT_MODE
       end
     end
   end

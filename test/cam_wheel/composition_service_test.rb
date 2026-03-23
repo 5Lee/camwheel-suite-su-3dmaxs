@@ -47,6 +47,23 @@ class CamWheelCompositionServiceTest < Minitest::Test
     assert_equal "1:1", next_ratio
   end
 
+  def test_next_ratio_includes_common_portrait_and_four_five_presets
+    next_ratio = CamWheel::Services::CompositionService.next_ratio("4:3")
+
+    assert_equal "3:4", next_ratio
+  end
+
+  def test_ratio_dimensions_supports_four_five_and_five_four
+    assert_equal [4.0, 5.0], CamWheel::Services::CompositionService.ratio_dimensions(
+      mode: "4:5",
+      orientation: :portrait
+    )
+    assert_equal [5.0, 4.0], CamWheel::Services::CompositionService.ratio_dimensions(
+      mode: "5:4",
+      orientation: :landscape
+    )
+  end
+
   def test_spiral_corner_cycles_in_declared_order
     next_corner = CamWheel::Services::CompositionService.next_spiral_corner("top_left")
 
