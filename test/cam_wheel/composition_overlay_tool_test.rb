@@ -85,10 +85,14 @@ class CamWheelCompositionOverlayToolTest < Minitest::Test
     end
   end
 
-  FakeModel = Struct.new(:active_view)
+  FakePages = Struct.new(:count)
+  FakeModel = Struct.new(:active_view, :pages)
 
   def setup
     CamWheel::Data::SettingsStore.reset_memory_store!
+    @timer_blocks = []
+    ::UI.instance_variable_set(:@camwheel_test_last_messagebox, nil)
+    ::Sketchup.instance_variable_set(:@camwheel_test_last_action, nil)
     @original_active_model =
       ::Sketchup.method(:active_model) if ::Sketchup.respond_to?(:active_model)
 
@@ -107,6 +111,15 @@ class CamWheelCompositionOverlayToolTest < Minitest::Test
     ::UI.singleton_class.send(:define_method, :messagebox) do |message|
       @camwheel_test_last_messagebox = message
     end
+
+    ::UI.singleton_class.send(:define_method, :start_timer) do |_seconds, _repeat = false, &block|
+      @camwheel_test_timer_blocks ||= []
+      @camwheel_test_timer_blocks << block
+      @camwheel_test_timer_blocks.length
+    end
+
+    ::UI.instance_variable_set(:@camwheel_test_timer_blocks, @timer_blocks)
+    ::Sketchup.singleton_class.send(:define_method, :active_model) { FakeModel.new(nil, FakePages.new(0)) }
   end
 
   def test_shortcut_action_maps_control_to_ratio_cycle
@@ -132,7 +145,7 @@ class CamWheelCompositionOverlayToolTest < Minitest::Test
   def test_activate_updates_vcb_with_current_fov_by_default
     camera = FakeCamera.new(50.0, true, 35.0)
     view = FakeView.new(camera, false)
-    model = FakeModel.new(view)
+    model = FakeModel.new(view, FakePages.new(0))
 
     ::Sketchup.singleton_class.send(:define_method, :active_model) { model }
 
@@ -159,7 +172,7 @@ class CamWheelCompositionOverlayToolTest < Minitest::Test
   def test_switch_to_focal_mode_updates_vcb_label_and_applies_focal_length
     camera = FakeCamera.new(24.0, true, 53.13)
     view = FakeView.new(camera, false)
-    model = FakeModel.new(view)
+    model = FakeModel.new(view, FakePages.new(0))
     ::Sketchup.singleton_class.send(:define_method, :active_model) { model }
 
     tool = CamWheel::Tools::CompositionOverlayTool.new
@@ -211,6 +224,8 @@ class CamWheelCompositionOverlayToolTest < Minitest::Test
   def test_save_view_menu_action_triggers_sketchup_native_action
     tool = CamWheel::Tools::CompositionOverlayTool.new
     menu = FakeMenu.new
+    pages = FakePages.new(3)
+    ::Sketchup.singleton_class.send(:define_method, :active_model) { FakeModel.new(nil, pages) }
 
     ::Sketchup.singleton_class.send(:define_method, :platform) { :platform_win }
     ::Sketchup.singleton_class.send(:define_method, :send_action) do |action|
@@ -224,11 +239,14 @@ class CamWheelCompositionOverlayToolTest < Minitest::Test
     save_item.block.call
 
     assert_equal 21180, ::Sketchup.instance_variable_get(:@camwheel_test_last_action)
+    assert_equal 1, @timer_blocks.length
   end
 
   def test_save_view_menu_action_uses_page_add_string_on_macos
     tool = CamWheel::Tools::CompositionOverlayTool.new
     menu = FakeMenu.new
+    pages = FakePages.new(3)
+    ::Sketchup.singleton_class.send(:define_method, :active_model) { FakeModel.new(nil, pages) }
 
     ::Sketchup.singleton_class.send(:define_method, :platform) { :platform_osx }
     ::Sketchup.singleton_class.send(:define_method, :send_action) do |action|
@@ -242,12 +260,49 @@ class CamWheelCompositionOverlayToolTest < Minitest::Test
     save_item.block.call
 
     assert_equal "pageAdd:", ::Sketchup.instance_variable_get(:@camwheel_test_last_action)
+    assert_equal 1, @timer_blocks.length
+  end
+
+  def test_save_view_shows_success_message_only_when_page_count_increases
+    tool = CamWheel::Tools::CompositionOverlayTool.new
+    pages = FakePages.new(2)
+    ::Sketchup.singleton_class.send(:define_method, :active_model) { FakeModel.new(nil, pages) }
+    ::Sketchup.singleton_class.send(:define_method, :platform) { :platform_osx }
+    ::Sketchup.singleton_class.send(:define_method, :send_action) do |_action|
+      pages.count += 1
+    end
+
+    tool.send(:save_view)
+
+    assert_equal 1, @timer_blocks.length
+    assert_nil ::UI.instance_variable_get(:@camwheel_test_last_messagebox)
+
+    @timer_blocks.first.call
+
+    assert_equal "视角已保存", ::UI.instance_variable_get(:@camwheel_test_last_messagebox)
+  end
+
+  def test_save_view_does_not_show_success_message_when_page_count_is_unchanged
+    tool = CamWheel::Tools::CompositionOverlayTool.new
+    pages = FakePages.new(2)
+    ::Sketchup.singleton_class.send(:define_method, :active_model) { FakeModel.new(nil, pages) }
+    ::Sketchup.singleton_class.send(:define_method, :platform) { :platform_osx }
+    ::Sketchup.singleton_class.send(:define_method, :send_action) do |_action|
+      pages.count
+    end
+
+    tool.send(:save_view)
+
+    assert_equal 1, @timer_blocks.length
+    @timer_blocks.first.call
+
+    assert_nil ::UI.instance_variable_get(:@camwheel_test_last_messagebox)
   end
 
   def test_export_image_shows_success_messagebox_when_export_succeeds
     camera = FakeCamera.new(50.0, true, 35.0)
     view = FakeView.new(camera, false)
-    model = FakeModel.new(view)
+    model = FakeModel.new(view, FakePages.new(0))
     ::Sketchup.singleton_class.send(:define_method, :active_model) { model }
 
     CamWheel::Services::ExportService.singleton_class.send(:define_method, :export_current_view) do |**_kwargs|

@@ -286,9 +286,11 @@ module CamWheel
       end
 
       def save_view
+        initial_pages_count = current_pages_count
         return unless defined?(Sketchup) && Sketchup.respond_to?(:send_action)
 
         Sketchup.send_action(save_view_action)
+        notify_if_scene_saved(initial_pages_count)
       rescue StandardError
         nil
       end
@@ -323,6 +325,34 @@ module CamWheel
 
       def current_vcb_input_mode
         settings_store.read(:composition_vcb_input_mode)
+      end
+
+      def notify_if_scene_saved(initial_pages_count)
+        return if initial_pages_count.nil?
+        return unless defined?(::UI) && ::UI.respond_to?(:start_timer)
+
+        ::UI.start_timer(0, false) do
+          next unless current_pages_count.to_i > initial_pages_count.to_i
+          next unless ::UI.respond_to?(:messagebox)
+
+          ::UI.messagebox("视角已保存")
+        end
+      rescue StandardError
+        nil
+      end
+
+      def current_pages_count
+        return nil unless defined?(Sketchup) && Sketchup.respond_to?(:active_model)
+
+        model = Sketchup.active_model
+        return nil unless model && model.respond_to?(:pages)
+
+        pages = model.pages
+        return nil unless pages && pages.respond_to?(:count)
+
+        pages.count
+      rescue StandardError
+        nil
       end
 
       def set_vcb_input_mode(mode, view = Sketchup.active_model.active_view)

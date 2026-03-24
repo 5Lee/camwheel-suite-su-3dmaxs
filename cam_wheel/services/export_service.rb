@@ -63,7 +63,7 @@ module CamWheel
             output_width: width,
             output_height: height
           )
-          temp_file = Tempfile.new(["camwheel-export-", ".png"])
+          temp_file = Tempfile.new(["camwheel-export-", ".jpg"])
           temp_path = temp_file.path
           temp_file.close
 
@@ -102,7 +102,7 @@ module CamWheel
         def default_filename(model_path:, exported_at:)
           base_name = model_basename(model_path)
           timestamp = exported_at.strftime("%Y%m%d-%H%M%S")
-          "#{base_name}-#{timestamp}.png"
+          "#{base_name}-#{timestamp}.jpg"
         end
 
         def model_basename(model_path)

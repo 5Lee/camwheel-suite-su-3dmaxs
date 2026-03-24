@@ -21,7 +21,7 @@ module ::UI
   def self.savepanel(*args)
     self.camwheel_test_saved_paths ||= []
     self.camwheel_test_savepanel_calls ||= []
-    path = "/tmp/camwheel-test.png"
+    path = "/tmp/camwheel-test.jpg"
     self.camwheel_test_savepanel_calls << args
     self.camwheel_test_saved_paths << path
     path
@@ -124,11 +124,12 @@ class CamWheelExportServiceUiResolutionTest < Minitest::Test
     )
 
     assert_equal true, result
-    assert_equal "/tmp/camwheel-test.png", ::UI.camwheel_test_saved_paths.last
-    assert_match(/\Aexample-model-\d{8}-\d{6}\.png\z/, ::UI.camwheel_test_savepanel_calls.last[2])
+    assert_equal "/tmp/camwheel-test.jpg", ::UI.camwheel_test_saved_paths.last
+    assert_match(/\Aexample-model-\d{8}-\d{6}\.jpg\z/, ::UI.camwheel_test_savepanel_calls.last[2])
+    assert_match(/\.jpg\z/, view.writes.last[:filename])
     assert_equal 1920, view.writes.last[:width]
     assert_equal 1440, view.writes.last[:height]
-    assert_equal 1920, ::Sketchup::ImageRep.camwheel_test_saved_images.fetch("/tmp/camwheel-test.png")[:width]
+    assert_equal 1920, ::Sketchup::ImageRep.camwheel_test_saved_images.fetch("/tmp/camwheel-test.jpg")[:width]
   end
 
   def test_export_keeps_original_camera_state_and_crops_to_composition_frame
@@ -143,7 +144,7 @@ class CamWheelExportServiceUiResolutionTest < Minitest::Test
       hide_overlay: ->(_value) {}
     )
 
-    saved = ::Sketchup::ImageRep.camwheel_test_saved_images.fetch("/tmp/camwheel-test.png")
+    saved = ::Sketchup::ImageRep.camwheel_test_saved_images.fetch("/tmp/camwheel-test.jpg")
     first_pixel = saved[:data].bytes.first(3)
     last_pixel_offset = ((saved[:width] * saved[:height]) - 1) * 3
     last_pixel = saved[:data].byteslice(last_pixel_offset, 3).bytes
