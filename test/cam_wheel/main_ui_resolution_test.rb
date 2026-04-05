@@ -91,7 +91,7 @@ class CamWheelMainUiResolutionTest < Minitest::Test
 
     refute_nil toolbar
     assert_equal "CamWheel", toolbar.name
-    assert_equal 5, toolbar.items.length
+    assert_equal 6, toolbar.items.length
   end
 
   def test_builds_extensions_submenu_with_individual_commands
@@ -102,6 +102,6 @@ class CamWheelMainUiResolutionTest < Minitest::Test
     submenu = extensions_menu.items.find { |item| item.is_a?(::UI::Menu) && item.name == "CamWheel" }
 
     refute_nil submenu
-    assert_equal 5, submenu.items.length
+    assert_equal 6, submenu.items.length
   end
 end

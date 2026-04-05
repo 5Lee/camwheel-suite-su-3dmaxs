@@ -88,6 +88,7 @@ class CamWheelMainToolReferenceTest < Minitest::Test
     ::UI::Menu.reset!
     ::Sketchup.instance_variable_set(:@camwheel_test_model, nil)
     CamWheel.instance_variable_set(:@booted, nil) if defined?(CamWheel)
+    CamWheel.instance_variable_set(:@canvas_tool_command, nil) if defined?(CamWheel)
     CamWheel.instance_variable_set(:@align_view_command, nil) if defined?(CamWheel)
     CamWheel.instance_variable_set(:@penetration_command, nil) if defined?(CamWheel)
     CamWheel.instance_variable_set(:@align_view_tool, nil) if defined?(CamWheel)
@@ -124,5 +125,14 @@ class CamWheelMainToolReferenceTest < Minitest::Test
     second_tool = model.selected_tools.last
 
     assert_same first_tool, second_tool
+  end
+
+  def test_canvas_tool_command_is_defined
+    main_file = File.expand_path("../../cam_wheel/main.rb", __dir__)
+    load main_file
+
+    command = CamWheel.send(:canvas_tool_command)
+
+    refute_nil command
   end
 end

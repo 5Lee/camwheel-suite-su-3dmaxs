@@ -5,6 +5,7 @@ composition_tool_file = File.join(__dir__, "tools", "composition_overlay_tool")
 penetration_tool_file = File.join(__dir__, "tools", "penetration_tool")
 align_view_tool_file = File.join(__dir__, "tools", "align_view_tool")
 settings_dialog_file = File.join(__dir__, "ui", "settings_dialog")
+canvas_tool_dialog_file = File.join(__dir__, "ui", "canvas_tool_dialog")
 
 if defined?(Sketchup)
   Sketchup.require(constants_file)
@@ -12,12 +13,14 @@ if defined?(Sketchup)
   Sketchup.require(penetration_tool_file)
   Sketchup.require(align_view_tool_file)
   Sketchup.require(settings_dialog_file)
+  Sketchup.require(canvas_tool_dialog_file)
 else
   require constants_file
   require composition_tool_file
   require penetration_tool_file
   require align_view_tool_file
   require settings_dialog_file
+  require canvas_tool_dialog_file
 end
 
 module CamWheel
@@ -48,6 +51,10 @@ module CamWheel
       UI::SettingsDialog.show
     end
 
+    def show_canvas_tool
+      UI::CanvasToolDialog.show
+    end
+
     private
 
     def build_toolbar
@@ -56,6 +63,7 @@ module CamWheel
       toolbar.add_item(align_view_command)
       toolbar.add_item(two_point_perspective_command)
       toolbar.add_item(composition_overlay_command)
+      toolbar.add_item(canvas_tool_command)
       toolbar.add_item(settings_command)
       toolbar.restore
     end
@@ -67,6 +75,7 @@ module CamWheel
       submenu.add_item(align_view_command)
       submenu.add_item(two_point_perspective_command)
       submenu.add_item(composition_overlay_command)
+      submenu.add_item(canvas_tool_command)
       submenu.add_item(settings_command)
     end
 
@@ -121,6 +130,17 @@ module CamWheel
         command.tooltip = "设置"
         command.status_bar_text = "打开 CamWheel 设置"
         apply_command_icons(command, "settings.svg")
+        command
+      end
+    end
+
+    def canvas_tool_command
+      @canvas_tool_command ||= begin
+        command = ::UI::Command.new("拼图画布") { show_canvas_tool }
+        command.menu_text = "拼图画布"
+        command.tooltip = "拼图画布"
+        command.status_bar_text = "打开 CamWheel 拼图画布工具"
+        apply_command_icons(command, "canvas_tool.svg")
         command
       end
     end
