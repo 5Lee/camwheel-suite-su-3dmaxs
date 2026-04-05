@@ -1,0 +1,16 @@
+name "CamWheel 3ds Max Viewport Export"
+version 1.0
+description "Install CamWheel viewport export tools into the user scripts and startup folders."
+
+copy "scripts\\3dsmax_camwheel_viewport_export\\CamWheel_ViewportExport.ms" to "$scripts\\3dsmax_camwheel_viewport_export"
+copy "scripts\\3dsmax_camwheel_viewport_export\\export.ms" to "$scripts\\3dsmax_camwheel_viewport_export"
+copy "scripts\\3dsmax_camwheel_viewport_export\\guides.ms" to "$scripts\\3dsmax_camwheel_viewport_export"
+copy "scripts\\3dsmax_camwheel_viewport_export\\panel.ms" to "$scripts\\3dsmax_camwheel_viewport_export"
+copy "scripts\\3dsmax_camwheel_viewport_export\\install.txt" to "$scripts\\3dsmax_camwheel_viewport_export"
+copy "scripts\\3dsmax_camwheel_viewport_export\\LICENSE" to "$scripts\\3dsmax_camwheel_viewport_export"
+copy "scripts\\3dsmax_camwheel_viewport_export\\icons\\camwheel_panel.svg" to "$scripts\\3dsmax_camwheel_viewport_export\\icons"
+copy "scripts\\3dsmax_camwheel_viewport_export\\icons\\camwheel_panel_24.png" to "$scripts\\3dsmax_camwheel_viewport_export\\icons"
+copy "scripts\\3dsmax_camwheel_viewport_export\\icons\\camwheel_panel_30.png" to "$scripts\\3dsmax_camwheel_viewport_export\\icons"
+copy "startup\\CamWheel_ViewportExport_Startup.ms" to "$startupScripts"
+drop "install.ms"
+clear temp on MAX exit

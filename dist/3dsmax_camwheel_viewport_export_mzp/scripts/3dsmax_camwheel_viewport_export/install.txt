@@ -1,0 +1,58 @@
+构图辅助 3ds Max 视口导出插件
+
+作者：
+- 光影图像
+
+开源协议：
+- GPL-3.0
+
+安装内容：
+- CamWheel_ViewportExport.ms
+- export.ms
+- guides.ms
+- panel.ms
+- LICENSE
+- icons/camwheel_panel.svg
+- icons/camwheel_panel_24.png
+- icons/camwheel_panel_30.png
+
+推荐安装位置：
+- 把整个 `3dsmax_camwheel_viewport_export` 文件夹复制到：
+- `C:\Users\<你的用户名>\AppData\Local\Autodesk\3dsMax\<版本>\ENU\scripts\startup\3dsmax_camwheel_viewport_export\`
+
+拖拽安装：
+- 也可以直接把 `CamWheel_ViewportExport.mzp` 拖进 3ds Max 视口
+- 安装包会把脚本复制到用户 `scripts` 和 `startup` 目录
+- 安装完成后会弹出提示，建议重启一次 3ds Max
+- 如果你要在界面里固定显示按钮，请打开 `Customize User Interface`
+- 在 `Category: CamWheel` 下找到 `CamWheel_MainPanel`
+- 把它拖到工具栏
+- 插件启动时会把 PNG 图标自动复制到 `#userIcons/Light/CamWheel` 和 `#userIcons/Dark/CamWheel`
+- 工具栏按钮默认会读取 `CamWheel/camwheel_panel` 图标
+- 如需自定义，也可以手动指定 `icons/camwheel_panel.svg` 或对应 PNG 图标
+
+首次加载：
+- 启动 3ds Max 后，如果脚本未自动出现，可手动运行一次 `CamWheel_ViewportExport.ms`
+- 运行后会注册工具栏宏脚本和右键菜单入口
+- 插件加载时不会自动弹出控制面板，需要时再手动打开
+
+建议入口：
+- 工具栏：把 `CamWheel / CamWheel_MainPanel` 宏脚本拖到工具栏，作为主入口
+- 工具栏：把 `CamWheel / CamWheel_ViewportExport` 宏脚本拖到工具栏
+- 工具栏：把 `CamWheel / CamWheel_ToggleGuides` 宏脚本拖到工具栏可快速切换辅助线
+- 工具栏：把 `CamWheel / CamWheel_OpenPanel` 宏脚本拖到工具栏可快速打开小面板
+- 右键菜单：脚本加载后会尝试把 `CamWheel` 子菜单挂到视口右键菜单
+- 独立小面板：执行 `CamWheel_ShowPanel()`
+- 关于弹窗：在控制面板点击 `关于`
+- 图标资源：插件提供 `SVG` 源图和 `PNG` 工具栏图标，可在自定义工具栏时使用
+
+目标行为：
+- 导出当前活动视口
+- 走原生预览抓取流程
+- 默认文件名：场景名-时间戳.jpg
+- 提供三分线 / 中心线 / 对角线构图辅助线
+
+说明：
+- 首版不替代 3ds Max 自带安全框
+- 辅助线仅用于视口观察，不进入最终 JPG
+- 如果右键菜单没有立即出现，可重启 3ds Max 后再测试一次
