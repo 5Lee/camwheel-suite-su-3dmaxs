@@ -120,6 +120,17 @@ fn CamWheel_SyncRenderSettingsFromPanel =
   true
 )
 
+fn CamWheel_UpdateGuideToggleAvailability =
+(
+  if CamWheelPanelRollout == undefined then return false
+
+  local guidesVisibleValue = CamWheelPanelRollout.guidesVisibleToggle.checked
+  CamWheelPanelRollout.thirdsToggle.enabled = guidesVisibleValue
+  CamWheelPanelRollout.centerToggle.enabled = guidesVisibleValue
+  CamWheelPanelRollout.diagonalsToggle.enabled = guidesVisibleValue
+  true
+)
+
 fn CamWheel_SyncPanelState =
 (
   if CamWheelPanelRollout == undefined then return false
@@ -135,6 +146,7 @@ fn CamWheel_SyncPanelState =
   CamWheelPanelRollout.thirdsToggle.checked = CamWheel_GetGuideState #show_rule_of_thirds true
   CamWheelPanelRollout.centerToggle.checked = CamWheel_GetGuideState #show_center_cross false
   CamWheelPanelRollout.diagonalsToggle.checked = CamWheel_GetGuideState #show_diagonals false
+  CamWheel_UpdateGuideToggleAvailability()
   CamWheel_PanelSyncInProgress = false
   true
 )
@@ -155,8 +167,6 @@ rollout CamWheelPanelRollout "CamWheel 控制面板"
   checkbox thirdsToggle "三分线" checked:true
   checkbox centerToggle "中心线" checked:false
   checkbox diagonalsToggle "对角线" checked:false
-  button allOnButton "全部开启" width:86
-  button allOffButton "全部关闭" width:86
   button aboutButton "关于" width:180
 
   on CamWheelPanelRollout open do
@@ -241,6 +251,7 @@ rollout CamWheelPanelRollout "CamWheel 控制面板"
   on guidesVisibleToggle changed state do
   (
     CamWheel_SetGuideState #guides_visible state
+    CamWheel_UpdateGuideToggleAvailability()
     CamWheel_RedrawGuides()
   )
 
@@ -260,22 +271,6 @@ rollout CamWheelPanelRollout "CamWheel 控制面板"
   (
     CamWheel_SetGuideState #show_diagonals state
     CamWheel_RedrawGuides()
-  )
-
-  on allOnButton pressed do
-  (
-    thirdsToggle.checked = true
-    centerToggle.checked = true
-    diagonalsToggle.checked = true
-    CamWheel_SetAllGuides true
-  )
-
-  on allOffButton pressed do
-  (
-    thirdsToggle.checked = false
-    centerToggle.checked = false
-    diagonalsToggle.checked = false
-    CamWheel_SetAllGuides false
   )
 )
 
