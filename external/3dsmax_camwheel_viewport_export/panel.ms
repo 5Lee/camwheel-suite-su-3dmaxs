@@ -5,11 +5,19 @@ global CamWheel_ReadRenderSettings
 global CamWheel_ApplyRenderSettings
 global CamWheel_PanelAspectRatio
 global CamWheel_PanelSyncInProgress
+global CamWheel_PanelCameraNodes
+global CamWheel_PanelBatchStatusText
 global CamWheel_RoundPositive
 global CamWheel_SyncRenderSettingsFromPanel
+global CamWheel_PanelRefreshCameraList
+global CamWheel_PanelSelectAllCameras
+global CamWheel_PanelInvertCameraSelection
+global CamWheel_PanelGetSelectedCameras
 
 if CamWheel_PanelAspectRatio == undefined do CamWheel_PanelAspectRatio = 16.0 / 9.0
 if CamWheel_PanelSyncInProgress == undefined do CamWheel_PanelSyncInProgress = false
+if CamWheel_PanelCameraNodes == undefined do CamWheel_PanelCameraNodes = #()
+if CamWheel_PanelBatchStatusText == undefined do CamWheel_PanelBatchStatusText = "最近批量导出：未执行"
 
 fn CamWheel_GetAspectPresetItems =
 (
@@ -131,6 +139,76 @@ fn CamWheel_UpdateGuideToggleAvailability =
   true
 )
 
+fn CamWheel_UpdateBatchStatusText textValue =
+(
+  CamWheel_PanelBatchStatusText = textValue
+  if CamWheelPanelRollout != undefined do CamWheelPanelRollout.batchStatusLabel.text = textValue
+  true
+)
+
+fn CamWheel_PanelRefreshCameraList =
+(
+  if CamWheelPanelRollout == undefined then return false
+
+  CamWheel_PanelCameraNodes = CamWheel_GetSceneCameras()
+  CamWheelPanelRollout.cameraList.items.clear()
+
+  for cameraNode in CamWheel_PanelCameraNodes do
+  (
+    CamWheelPanelRollout.cameraList.items.add cameraNode.name
+  )
+
+  if CamWheel_PanelCameraNodes.count == 0 then
+    CamWheel_UpdateBatchStatusText "当前场景未找到相机"
+  else if CamWheel_PanelBatchStatusText == "当前场景未找到相机" then
+    CamWheel_UpdateBatchStatusText "最近批量导出：未执行"
+
+  true
+)
+
+fn CamWheel_PanelSelectAllCameras =
+(
+  if CamWheelPanelRollout == undefined then return false
+  if CamWheelPanelRollout.cameraList.items.count < 1 then return true
+
+  for cameraIndex = 0 to (CamWheelPanelRollout.cameraList.items.count - 1) do
+  (
+    CamWheelPanelRollout.cameraList.SetItemChecked cameraIndex true
+  )
+
+  true
+)
+
+fn CamWheel_PanelInvertCameraSelection =
+(
+  if CamWheelPanelRollout == undefined then return false
+  if CamWheelPanelRollout.cameraList.items.count < 1 then return true
+
+  for cameraIndex = 0 to (CamWheelPanelRollout.cameraList.items.count - 1) do
+  (
+    CamWheelPanelRollout.cameraList.SetItemChecked cameraIndex (not CamWheelPanelRollout.cameraList.GetItemChecked cameraIndex)
+  )
+
+  true
+)
+
+fn CamWheel_PanelGetSelectedCameras =
+(
+  local selectedCameraNodes = #()
+  if CamWheelPanelRollout == undefined then return selectedCameraNodes
+  if CamWheel_PanelCameraNodes.count < 1 then return selectedCameraNodes
+
+  for cameraIndex = 0 to (CamWheel_PanelCameraNodes.count - 1) do
+  (
+    if CamWheelPanelRollout.cameraList.GetItemChecked cameraIndex do
+    (
+      append selectedCameraNodes CamWheel_PanelCameraNodes[cameraIndex + 1]
+    )
+  )
+
+  selectedCameraNodes
+)
+
 fn CamWheel_SyncPanelState =
 (
   if CamWheelPanelRollout == undefined then return false
@@ -146,31 +224,43 @@ fn CamWheel_SyncPanelState =
   CamWheelPanelRollout.thirdsToggle.checked = CamWheel_GetGuideState #show_rule_of_thirds true
   CamWheelPanelRollout.centerToggle.checked = CamWheel_GetGuideState #show_center_cross false
   CamWheelPanelRollout.diagonalsToggle.checked = CamWheel_GetGuideState #show_diagonals false
+  CamWheelPanelRollout.batchStatusLabel.text = CamWheel_PanelBatchStatusText
   CamWheel_UpdateGuideToggleAvailability()
+  CamWheel_PanelRefreshCameraList()
   CamWheel_PanelSyncInProgress = false
   true
 )
 
 rollout CamWheelPanelRollout "CamWheel 控制面板"
 (
-  dropdownlist aspectPresetDropdown "比例预设" items:(CamWheel_GetAspectPresetItems()) selection:3 width:180
-  checkbox lockAspectToggle "锁定比例" checked:true
-  spinner widthSpinner "宽度" range:[1,32768,1920] type:#integer fieldwidth:72
-  spinner heightSpinner "高度" range:[1,32768,1080] type:#integer fieldwidth:72
-  groupBox quickResolutionGroup "快捷分辨率" width:180 height:56
-  button quick1024Button "1024" width:38 across:4
-  button quick1920Button "1920" width:38
-  button quick2048Button "2048" width:38
-  button quick3840Button "3840" width:38
-  button exportButton "导出当前视口" width:180
-  checkbox guidesVisibleToggle "显示辅助线" checked:true
-  checkbox thirdsToggle "三分线" checked:true
-  checkbox centerToggle "中心线" checked:false
-  checkbox diagonalsToggle "对角线" checked:false
-  button aboutButton "关于" width:180
+  dropdownlist aspectPresetDropdown "比例预设" pos:[12,12] items:(CamWheel_GetAspectPresetItems()) selection:3 width:180
+  checkbox lockAspectToggle "锁定比例" pos:[12,42] checked:true
+  spinner widthSpinner "宽度" pos:[12,70] range:[1,32768,1920] type:#integer fieldwidth:72
+  spinner heightSpinner "高度" pos:[12,98] range:[1,32768,1080] type:#integer fieldwidth:72
+  groupBox quickResolutionGroup "快捷分辨率" pos:[10,128] width:188 height:58
+  button quick1024Button "1024" pos:[18,150] width:40
+  button quick1920Button "1920" pos:[62,150] width:40
+  button quick2048Button "2048" pos:[106,150] width:40
+  button quick3840Button "3840" pos:[150,150] width:40
+  button exportButton "导出当前视口" pos:[12,194] width:180 height:28
+  groupBox guidesGroup "辅助线" pos:[10,228] width:188 height:96
+  checkbox guidesVisibleToggle "显示辅助线" pos:[20,248] checked:true
+  checkbox thirdsToggle "三分线" pos:[20,272] checked:true
+  checkbox centerToggle "中心线" pos:[96,272] checked:false
+  checkbox diagonalsToggle "对角线" pos:[20,296] checked:false
+  button aboutButton "关于" pos:[12,334] width:180 height:28
+
+  groupBox cameraBatchGroup "相机批量截图" pos:[210,10] width:198 height:354
+  dotNetControl cameraList "System.Windows.Forms.CheckedListBox" pos:[220,32] width:178 height:220
+  button refreshCameraListButton "刷新列表" pos:[220,260] width:54 height:24
+  button selectAllCamerasButton "全选" pos:[282,260] width:54 height:24
+  button invertCamerasButton "反选" pos:[344,260] width:54 height:24
+  button batchExportButton "批量导出选中相机" pos:[220,294] width:178 height:28
+  label batchStatusLabel "" pos:[220,330] width:178 height:28
 
   on CamWheelPanelRollout open do
   (
+    cameraList.CheckOnClick = true
     CamWheel_SyncPanelState()
   )
 
@@ -245,6 +335,30 @@ rollout CamWheelPanelRollout "CamWheel 控制面板"
   on quick3840Button pressed do CamWheel_ApplyQuickWidth 3840
 
   on exportButton pressed do CamWheel_ExportActiveViewport()
+  on refreshCameraListButton pressed do CamWheel_PanelRefreshCameraList()
+  on selectAllCamerasButton pressed do CamWheel_PanelSelectAllCameras()
+  on invertCamerasButton pressed do CamWheel_PanelInvertCameraSelection()
+
+  on batchExportButton pressed do
+  (
+    local selectedCameras = CamWheel_PanelGetSelectedCameras()
+    if selectedCameras.count == 0 then
+    (
+      messageBox "请先选择相机" title:"CamWheel"
+      return false
+    )
+
+    local exportDirectory = CamWheel_RequestBatchExportDirectory()
+    if exportDirectory == undefined then
+    (
+      CamWheel_UpdateBatchStatusText "最近批量导出：已取消"
+      return false
+    )
+
+    local exportResult = CamWheel_ExportSelectedCameras selectedCameras exportDirectory
+    CamWheel_UpdateBatchStatusText ("最近批量导出：成功 " + (exportResult[1] as string) + "，失败 " + (exportResult[2] as string))
+    true
+  )
 
   on aboutButton pressed do CamWheel_ShowAbout()
 
@@ -277,6 +391,6 @@ rollout CamWheelPanelRollout "CamWheel 控制面板"
 fn CamWheel_ShowPanel =
 (
   try(destroyDialog CamWheelPanelRollout)catch()
-  createDialog CamWheelPanelRollout 220 390
+  createDialog CamWheelPanelRollout 420 390
   CamWheel_SyncPanelState()
 )
