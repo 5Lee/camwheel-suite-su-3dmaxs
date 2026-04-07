@@ -196,6 +196,12 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes notes, "构图辅助"
     assert_includes notes, "光影图像"
     assert_includes notes, "GPL-3.0"
+    assert_includes notes, "相机批量截图"
+    assert_includes notes, "刷新列表"
+    assert_includes notes, "全选"
+    assert_includes notes, "反选"
+    assert_includes notes, "批量导出选中相机"
+    assert_includes notes, "场景名-相机名.jpg"
   end
 
   def test_license_file_is_gpl_3_0
@@ -223,6 +229,25 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes notes, "安全框内"
     assert_includes notes, "默认读取当前渲染设置"
     assert_includes notes, "自动同步到渲染设置"
+    assert_includes notes, "相机列表自动读取"
+    assert_includes notes, "批量导出选中相机"
+    assert_includes notes, "场景名-相机名.jpg"
+    assert_includes notes, "全选"
+    assert_includes notes, "反选"
+    assert_includes notes, "刷新列表"
+    assert_includes notes, "重名"
+    refute_includes notes, "全部开启 / 全部关闭"
+  end
+
+  def test_readme_mentions_batch_camera_export
+    notes = File.read(entry_file("README.md"))
+
+    assert_includes notes, "相机批量截图"
+    assert_includes notes, "批量导出选中相机"
+    assert_includes notes, "场景名-相机名.jpg"
+    assert_includes notes, "刷新列表"
+    assert_includes notes, "全选"
+    assert_includes notes, "反选"
   end
 
   def test_mzp_package_recipe_installs_scripts_and_startup_loader
