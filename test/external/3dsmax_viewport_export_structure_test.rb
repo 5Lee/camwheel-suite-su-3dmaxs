@@ -106,11 +106,19 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
   def test_guide_script_defines_overlay_state_and_toggle_hooks
     script = File.read(entry_file("guides.ms"))
 
+    assert_includes script, "global CamWheel_GuideStateFilePath"
     assert_includes script, "show_rule_of_thirds"
     assert_includes script, "show_center_cross"
     assert_includes script, "show_diagonals"
     assert_includes script, "CamWheel_ToggleGuides"
     assert_includes script, "CamWheel_SetAllGuides"
+    assert_includes script, "CamWheel_DefaultGuideState"
+    assert_includes script, "CamWheel_LoadGuideState"
+    assert_includes script, "CamWheel_SaveGuideState"
+    assert_includes script, "CamWheel_SetGuideStateAndPersist"
+    assert_includes script, "getINISetting"
+    assert_includes script, "setINISetting"
+    assert_includes script, "#guides_visible, false"
     assert_includes script, "CamWheel_RedrawGuides"
     assert_includes script, "registerRedrawViewsCallback"
     assert_includes script, "unRegisterRedrawViewsCallback"
