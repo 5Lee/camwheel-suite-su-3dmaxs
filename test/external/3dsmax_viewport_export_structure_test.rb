@@ -233,6 +233,10 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes notes, "首次默认关闭"
     assert_includes notes, "记住上一次"
     assert_includes notes, "camwheel_guides_state.ini"
+    assert_includes notes, "当前选中相机设置"
+    assert_includes notes, "应用到当前相机"
+    assert_includes notes, "每个相机独立"
+    assert_includes notes, "比例预设 + 宽度 + 高度"
   end
 
   def test_license_file_is_gpl_3_0
@@ -270,6 +274,9 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes notes, "删除状态文件"
     assert_includes notes, "首次默认关闭"
     assert_includes notes, "记住上一次"
+    assert_includes notes, "当前选中相机设置"
+    assert_includes notes, "应用到当前相机"
+    assert_includes notes, "每个相机独立"
     refute_includes notes, "全部开启 / 全部关闭"
   end
 
@@ -285,6 +292,10 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes notes, "首次默认关闭"
     assert_includes notes, "记住上一次"
     assert_includes notes, "camwheel_guides_state.ini"
+    assert_includes notes, "当前选中相机设置"
+    assert_includes notes, "应用到当前相机"
+    assert_includes notes, "每个相机独立"
+    assert_includes notes, "比例预设 + 宽度 + 高度"
   end
 
   def test_mzp_package_recipe_installs_scripts_and_startup_loader
