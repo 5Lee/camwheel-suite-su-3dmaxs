@@ -17,7 +17,7 @@ global CamWheel_EnsureToolbarIcons
 
 if CamWheel_ScriptRoot == undefined do CamWheel_ScriptRoot = getFilenamePath (getSourceFileName())
 if CamWheel_PluginName == undefined do CamWheel_PluginName = "构图辅助"
-if CamWheel_PluginVersion == undefined do CamWheel_PluginVersion = "1.0.0"
+if CamWheel_PluginVersion == undefined do CamWheel_PluginVersion = "1.0.1"
 if CamWheel_PluginAuthor == undefined do CamWheel_PluginAuthor = "光影图像"
 if CamWheel_PluginLicense == undefined do CamWheel_PluginLicense = "GPL-3.0"
 
