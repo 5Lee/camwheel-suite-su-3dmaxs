@@ -7,17 +7,22 @@ global CamWheel_PanelAspectRatio
 global CamWheel_PanelSyncInProgress
 global CamWheel_PanelCameraNodes
 global CamWheel_PanelBatchStatusText
+global CamWheel_PanelSelectedCameraIndex
 global CamWheel_RoundPositive
 global CamWheel_SyncRenderSettingsFromPanel
 global CamWheel_PanelRefreshCameraList
 global CamWheel_PanelSelectAllCameras
 global CamWheel_PanelInvertCameraSelection
 global CamWheel_PanelGetSelectedCameras
+global CamWheel_PanelSyncSelectedCameraSettings
+global CamWheel_PanelApplySelectedCameraSettings
+global CamWheel_PanelFormatCameraListItem
 
 if CamWheel_PanelAspectRatio == undefined do CamWheel_PanelAspectRatio = 16.0 / 9.0
 if CamWheel_PanelSyncInProgress == undefined do CamWheel_PanelSyncInProgress = false
 if CamWheel_PanelCameraNodes == undefined do CamWheel_PanelCameraNodes = #()
 if CamWheel_PanelBatchStatusText == undefined do CamWheel_PanelBatchStatusText = "最近批量导出：未执行"
+if CamWheel_PanelSelectedCameraIndex == undefined do CamWheel_PanelSelectedCameraIndex = 0
 
 fn CamWheel_GetAspectPresetItems =
 (
@@ -146,16 +151,77 @@ fn CamWheel_UpdateBatchStatusText textValue =
   true
 )
 
+fn CamWheel_PanelFormatCameraListItem cameraNode =
+(
+  local cameraSettings = CamWheel_GetCameraExportSettings cameraNode
+  cameraNode.name + "    " + (cameraSettings[1] as string) + "    " + (cameraSettings[2] as string) + "×" + (cameraSettings[3] as string)
+)
+
+fn CamWheel_PanelSyncSelectedCameraSettings =
+(
+  if CamWheelPanelRollout == undefined then return false
+
+  if CamWheel_PanelSelectedCameraIndex < 1 or CamWheel_PanelSelectedCameraIndex > CamWheel_PanelCameraNodes.count then
+  (
+    CamWheelPanelRollout.selectedCameraNameLabel.text = "当前相机：未选择"
+    return false
+  )
+
+  local cameraNode = CamWheel_PanelCameraNodes[CamWheel_PanelSelectedCameraIndex]
+  local cameraSettings = CamWheel_GetCameraExportSettings cameraNode
+
+  CamWheel_PanelSyncInProgress = true
+  CamWheelPanelRollout.selectedCameraNameLabel.text = "当前相机：" + cameraNode.name
+  CamWheelPanelRollout.selectedCameraAspectDropdown.selection = amax 1 (findItem CamWheelPanelRollout.selectedCameraAspectDropdown.items (cameraSettings[1] as string))
+  CamWheelPanelRollout.selectedCameraWidthSpinner.value = cameraSettings[2]
+  CamWheelPanelRollout.selectedCameraHeightSpinner.value = cameraSettings[3]
+  CamWheel_PanelSyncInProgress = false
+  true
+)
+
+fn CamWheel_PanelApplySelectedCameraSettings =
+(
+  if CamWheelPanelRollout == undefined then return false
+  if CamWheel_PanelSelectedCameraIndex < 1 or CamWheel_PanelSelectedCameraIndex > CamWheel_PanelCameraNodes.count then return false
+
+  local cameraNode = CamWheel_PanelCameraNodes[CamWheel_PanelSelectedCameraIndex]
+  local presetLabel = CamWheelPanelRollout.selectedCameraAspectDropdown.items[CamWheelPanelRollout.selectedCameraAspectDropdown.selection]
+  local widthValue = CamWheelPanelRollout.selectedCameraWidthSpinner.value
+  local heightValue = CamWheelPanelRollout.selectedCameraHeightSpinner.value
+
+  CamWheel_SaveCameraExportSettings cameraNode presetLabel widthValue heightValue
+  CamWheel_PanelRefreshCameraList()
+  CamWheel_UpdateBatchStatusText ("已更新相机设置：" + cameraNode.name)
+  true
+)
+
 fn CamWheel_PanelRefreshCameraList =
 (
   if CamWheelPanelRollout == undefined then return false
+
+  local checkedCameraNames = #()
+  for itemIndex = 0 to (CamWheelPanelRollout.cameraList.items.count - 1) do
+  (
+    if CamWheelPanelRollout.cameraList.GetItemChecked itemIndex do append checkedCameraNames CamWheel_PanelCameraNodes[itemIndex + 1].name
+  )
 
   CamWheel_PanelCameraNodes = CamWheel_GetSceneCameras()
   CamWheelPanelRollout.cameraList.items.clear()
 
   for cameraNode in CamWheel_PanelCameraNodes do
   (
-    CamWheelPanelRollout.cameraList.items.add cameraNode.name
+    local addedIndex = CamWheelPanelRollout.cameraList.items.add (CamWheel_PanelFormatCameraListItem cameraNode)
+    if findItem checkedCameraNames cameraNode.name > 0 do CamWheelPanelRollout.cameraList.SetItemChecked addedIndex true
+  )
+
+  if CamWheel_PanelCameraNodes.count > 0 then
+  (
+    if CamWheel_PanelSelectedCameraIndex < 1 or CamWheel_PanelSelectedCameraIndex > CamWheel_PanelCameraNodes.count do CamWheel_PanelSelectedCameraIndex = 1
+    CamWheelPanelRollout.cameraList.SelectedIndex = CamWheel_PanelSelectedCameraIndex - 1
+  )
+  else
+  (
+    CamWheel_PanelSelectedCameraIndex = 0
   )
 
   if CamWheel_PanelCameraNodes.count == 0 then
@@ -163,6 +229,7 @@ fn CamWheel_PanelRefreshCameraList =
   else if CamWheel_PanelBatchStatusText == "当前场景未找到相机" then
     CamWheel_UpdateBatchStatusText "最近批量导出：未执行"
 
+  CamWheel_PanelSyncSelectedCameraSettings()
   true
 )
 
@@ -227,6 +294,7 @@ fn CamWheel_SyncPanelState =
   CamWheelPanelRollout.batchStatusLabel.text = CamWheel_PanelBatchStatusText
   CamWheel_UpdateGuideToggleAvailability()
   CamWheel_PanelRefreshCameraList()
+  CamWheel_PanelSyncSelectedCameraSettings()
   CamWheel_PanelSyncInProgress = false
   true
 )
@@ -243,25 +311,38 @@ rollout CamWheelPanelRollout "CamWheel 控制面板"
   button quick2048Button "2048" pos:[106,150] width:40
   button quick3840Button "3840" pos:[150,150] width:40
   button exportButton "导出当前视口" pos:[12,194] width:180 height:28
-  groupBox guidesGroup "辅助线" pos:[10,228] width:188 height:96
-  checkbox guidesVisibleToggle "显示辅助线" pos:[20,248] checked:true
-  checkbox thirdsToggle "三分线" pos:[20,272] checked:true
-  checkbox centerToggle "中心线" pos:[96,272] checked:false
-  checkbox diagonalsToggle "对角线" pos:[20,296] checked:false
-  button aboutButton "关于" pos:[12,334] width:180 height:28
+  groupBox selectedCameraSettingsGroup "当前选中相机设置" pos:[10,228] width:188 height:104
+  label selectedCameraNameLabel "当前相机：未选择" pos:[20,248] width:160 height:16
+  dropdownlist selectedCameraAspectDropdown "比例预设" pos:[20,268] items:(CamWheel_GetAspectPresetItems()) selection:8 width:160
+  spinner selectedCameraWidthSpinner "宽度" pos:[20,296] range:[1,32768,1920] type:#integer fieldwidth:58
+  spinner selectedCameraHeightSpinner "高度" pos:[104,296] range:[1,32768,1080] type:#integer fieldwidth:58
+  button applySelectedCameraSettingsButton "应用到当前相机" pos:[20,324] width:160 height:24
+  button aboutButton "关于" pos:[12,356] width:180 height:24
 
-  groupBox cameraBatchGroup "相机批量截图" pos:[210,10] width:198 height:354
-  dotNetControl cameraList "System.Windows.Forms.CheckedListBox" pos:[220,32] width:178 height:220
-  button refreshCameraListButton "刷新列表" pos:[220,260] width:54 height:24
-  button selectAllCamerasButton "全选" pos:[282,260] width:54 height:24
-  button invertCamerasButton "反选" pos:[344,260] width:54 height:24
-  button batchExportButton "批量导出选中相机" pos:[220,294] width:178 height:28
-  label batchStatusLabel "" pos:[220,330] width:178 height:28
+  groupBox guidesGroup "辅助线" pos:[210,10] width:198 height:96
+  checkbox guidesVisibleToggle "显示辅助线" pos:[220,30] checked:true
+  checkbox thirdsToggle "三分线" pos:[220,54] checked:true
+  checkbox centerToggle "中心线" pos:[296,54] checked:false
+  checkbox diagonalsToggle "对角线" pos:[220,78] checked:false
+
+  groupBox cameraBatchGroup "相机批量截图" pos:[210,114] width:198 height:266
+  dotNetControl cameraList "System.Windows.Forms.CheckedListBox" pos:[220,136] width:178 height:178
+  button refreshCameraListButton "刷新列表" pos:[220,320] width:54 height:24
+  button selectAllCamerasButton "全选" pos:[282,320] width:54 height:24
+  button invertCamerasButton "反选" pos:[344,320] width:54 height:24
+  button batchExportButton "批量导出选中相机" pos:[220,350] width:178 height:24
+  label batchStatusLabel "" pos:[220,324] width:178 height:24
 
   on CamWheelPanelRollout open do
   (
     cameraList.CheckOnClick = true
     CamWheel_SyncPanelState()
+  )
+
+  on cameraList SelectedIndexChanged sender args do
+  (
+    CamWheel_PanelSelectedCameraIndex = cameraList.SelectedIndex + 1
+    if not CamWheel_PanelSyncInProgress do CamWheel_PanelSyncSelectedCameraSettings()
   )
 
   on aspectPresetDropdown selected itemIndex do
@@ -335,6 +416,7 @@ rollout CamWheelPanelRollout "CamWheel 控制面板"
   on quick3840Button pressed do CamWheel_ApplyQuickWidth 3840
 
   on exportButton pressed do CamWheel_ExportActiveViewport()
+  on applySelectedCameraSettingsButton pressed do CamWheel_PanelApplySelectedCameraSettings()
   on refreshCameraListButton pressed do CamWheel_PanelRefreshCameraList()
   on selectAllCamerasButton pressed do CamWheel_PanelSelectAllCameras()
   on invertCamerasButton pressed do CamWheel_PanelInvertCameraSelection()

@@ -119,7 +119,8 @@ fn CamWheel_ResolveUniqueExportPath directory filename =
 
 fn CamWheel_GetDefaultCameraExportSettings =
 (
-  local defaultPresetLabel = if renderHeight > 0 then ((renderWidth as string) + ":" + (renderHeight as string)) else "自定义"
+  local defaultPresetLabel = "自定义"
+  if CamWheel_GetAspectPresetLabel != undefined do defaultPresetLabel = CamWheel_GetAspectPresetLabel renderWidth renderHeight
   #(defaultPresetLabel, renderWidth, renderHeight)
 )
 
