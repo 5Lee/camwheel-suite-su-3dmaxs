@@ -181,6 +181,10 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "rendImageAspectRatio ="
     assert_includes script, "renderSceneDialog.isOpen()"
     assert_includes script, "renderSceneDialog.update()"
+    assert_includes script, "CamWheel_SetGuideStateAndPersist #guides_visible state"
+    assert_includes script, "CamWheel_SetGuideStateAndPersist #show_rule_of_thirds state"
+    assert_includes script, "CamWheel_SetGuideStateAndPersist #show_center_cross state"
+    assert_includes script, "CamWheel_SetGuideStateAndPersist #show_diagonals state"
     assert_includes script, "renderWidth"
     assert_includes script, "renderHeight"
   end

@@ -364,26 +364,26 @@ rollout CamWheelPanelRollout "CamWheel 控制面板"
 
   on guidesVisibleToggle changed state do
   (
-    CamWheel_SetGuideState #guides_visible state
+    CamWheel_SetGuideStateAndPersist #guides_visible state
     CamWheel_UpdateGuideToggleAvailability()
     CamWheel_RedrawGuides()
   )
 
   on thirdsToggle changed state do
   (
-    CamWheel_SetGuideState #show_rule_of_thirds state
+    CamWheel_SetGuideStateAndPersist #show_rule_of_thirds state
     CamWheel_RedrawGuides()
   )
 
   on centerToggle changed state do
   (
-    CamWheel_SetGuideState #show_center_cross state
+    CamWheel_SetGuideStateAndPersist #show_center_cross state
     CamWheel_RedrawGuides()
   )
 
   on diagonalsToggle changed state do
   (
-    CamWheel_SetGuideState #show_diagonals state
+    CamWheel_SetGuideStateAndPersist #show_diagonals state
     CamWheel_RedrawGuides()
   )
 )
