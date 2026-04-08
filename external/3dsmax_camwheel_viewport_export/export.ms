@@ -10,6 +10,10 @@ global CamWheel_SanitizeExportNamePart
 global CamWheel_BuildBatchExportFilename
 global CamWheel_ResolveUniqueExportPath
 global CamWheel_CompareCameraNodesByName
+global CamWheel_GetDefaultCameraExportSettings
+global CamWheel_GetCameraExportSettings
+global CamWheel_SaveCameraExportSettings
+global CamWheel_ApplyCameraExportSettings
 global CamWheel_ExportViewportForCamera
 global CamWheel_ExportSelectedCameras
 global CamWheel_ExportActiveViewport
@@ -52,6 +56,11 @@ fn CamWheel_RequestExportPath suggestedName =
 fn CamWheel_RequestBatchExportDirectory =
 (
   getSavePath caption:"选择批量导出文件夹"
+)
+
+fn CamWheel_GetCameraSettingsSectionName cameraNode =
+(
+  "camera." + (CamWheel_SanitizeExportNamePart (if cameraNode != undefined then cameraNode.name else "camera"))
 )
 
 fn CamWheel_CompareCameraNodesByName leftNode rightNode =
@@ -106,6 +115,53 @@ fn CamWheel_ResolveUniqueExportPath directory filename =
   )
 
   resolvedPath
+)
+
+fn CamWheel_GetDefaultCameraExportSettings =
+(
+  local defaultPresetLabel = if renderHeight > 0 then ((renderWidth as string) + ":" + (renderHeight as string)) else "自定义"
+  #(defaultPresetLabel, renderWidth, renderHeight)
+)
+
+fn CamWheel_GetCameraExportSettings cameraNode =
+(
+  local defaultSettings = CamWheel_GetDefaultCameraExportSettings()
+  local stateFilePath = CamWheel_GetGuideStateFilePath()
+  local sectionName = CamWheel_GetCameraSettingsSectionName cameraNode
+
+  local presetLabel = getINISetting stateFilePath sectionName "aspect_preset"
+  local widthValue = getINISetting stateFilePath sectionName "width"
+  local heightValue = getINISetting stateFilePath sectionName "height"
+
+  if presetLabel == undefined or presetLabel == "" do presetLabel = defaultSettings[1]
+  if widthValue == undefined or widthValue == "" then widthValue = defaultSettings[2] else widthValue = amax 1 (widthValue as integer)
+  if heightValue == undefined or heightValue == "" then heightValue = defaultSettings[3] else heightValue = amax 1 (heightValue as integer)
+
+  #(presetLabel, widthValue, heightValue)
+)
+
+fn CamWheel_SaveCameraExportSettings cameraNode presetLabel widthValue heightValue =
+(
+  if cameraNode == undefined then return false
+
+  local stateFilePath = CamWheel_GetGuideStateFilePath()
+  local sectionName = CamWheel_GetCameraSettingsSectionName cameraNode
+
+  setINISetting stateFilePath sectionName "aspect_preset" (presetLabel as string)
+  setINISetting stateFilePath sectionName "width" ((amax 1 widthValue) as string)
+  setINISetting stateFilePath sectionName "height" ((amax 1 heightValue) as string)
+  true
+)
+
+fn CamWheel_ApplyCameraExportSettings cameraNode =
+(
+  local cameraSettings = CamWheel_GetCameraExportSettings cameraNode
+  renderWidth = amin 32768 (amax 1 cameraSettings[2])
+  renderHeight = amin 32768 (amax 1 cameraSettings[3])
+  rendLockImageAspectRatio = true
+  rendImageAspectRatio = (renderWidth as float) / (renderHeight as float)
+  if renderSceneDialog.isOpen() do renderSceneDialog.update()
+  cameraSettings
 )
 
 fn CamWheel_RunNativePreviewExport exportPath =
@@ -182,6 +238,7 @@ fn CamWheel_ExportViewportForCamera cameraNode exportPath =
 
   try
   (
+    CamWheel_ApplyCameraExportSettings cameraNode
     viewport.setCamera cameraNode
     CamWheel_SetGuideState #guides_visible false
     CamWheel_RedrawGuides()
