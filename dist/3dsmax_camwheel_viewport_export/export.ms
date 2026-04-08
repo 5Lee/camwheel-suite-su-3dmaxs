@@ -1,9 +1,17 @@
 global CamWheel_DefaultExportFilename
 global CamWheel_RequestExportPath
+global CamWheel_RequestBatchExportDirectory
 global CamWheel_RunNativePreviewExport
 global CamWheel_ShowExportSuccess
 global CamWheel_ShowExportCanceled
 global CamWheel_ShowExportFailure
+global CamWheel_GetSceneCameras
+global CamWheel_SanitizeExportNamePart
+global CamWheel_BuildBatchExportFilename
+global CamWheel_ResolveUniqueExportPath
+global CamWheel_CompareCameraNodesByName
+global CamWheel_ExportViewportForCamera
+global CamWheel_ExportSelectedCameras
 global CamWheel_ExportActiveViewport
 global CamWheel_GetGuideState
 global CamWheel_SetGuideState
@@ -39,6 +47,65 @@ fn CamWheel_RequestExportPath suggestedName =
     caption:"导出当前视口" \
     filename:suggestedName \
     types:"JPEG (*.jpg)|*.jpg|"
+)
+
+fn CamWheel_RequestBatchExportDirectory =
+(
+  getSavePath caption:"选择批量导出文件夹"
+)
+
+fn CamWheel_CompareCameraNodesByName leftNode rightNode =
+(
+  stricmp leftNode.name rightNode.name < 0
+)
+
+fn CamWheel_GetSceneCameras =
+(
+  local cameraNodes = #()
+
+  for cameraNode in cameras do
+  (
+    if viewport.CanSetToViewport cameraNode do append cameraNodes cameraNode
+  )
+
+  qsort cameraNodes CamWheel_CompareCameraNodesByName
+  cameraNodes
+)
+
+fn CamWheel_SanitizeExportNamePart value =
+(
+  local sanitizedValue = if value == undefined then "" else (value as string)
+
+  for invalidCharacter in #("\\", "/", ":", "*", "?", "\"", "<", ">", "|") do
+  (
+    sanitizedValue = substituteString sanitizedValue invalidCharacter "-"
+  )
+
+  if sanitizedValue == "" then "camwheel" else sanitizedValue
+)
+
+fn CamWheel_BuildBatchExportFilename cameraNode =
+(
+  local sceneName = CamWheel_SanitizeExportNamePart (if maxFileName != undefined and maxFileName != "" then getFilenameFile maxFileName else "camwheel")
+  local cameraName = CamWheel_SanitizeExportNamePart (if cameraNode != undefined then cameraNode.name else "camera")
+  sceneName + "-" + cameraName + ".jpg"
+)
+
+fn CamWheel_ResolveUniqueExportPath directory filename =
+(
+  local normalizedFilename = CamWheel_NormalizeExportPath filename
+  local nameStem = getFilenameFile normalizedFilename
+  local extension = getFilenameType normalizedFilename
+  local resolvedPath = pathConfig.appendPath directory normalizedFilename
+  local duplicateIndex = 2
+
+  while doesFileExist resolvedPath do
+  (
+    resolvedPath = pathConfig.appendPath directory (nameStem + "-" + (duplicateIndex as string) + extension)
+    duplicateIndex += 1
+  )
+
+  resolvedPath
 )
 
 fn CamWheel_RunNativePreviewExport exportPath =
@@ -104,6 +171,92 @@ fn CamWheel_ShowExportFailure errorMessage =
 (
   messageBox ("导出失败：\n" + errorMessage as string) title:"CamWheel"
   false
+)
+
+fn CamWheel_ExportViewportForCamera cameraNode exportPath =
+(
+  if cameraNode == undefined then throw "未提供可导出的相机。"
+
+  local normalizedPath = CamWheel_NormalizeExportPath exportPath
+  local originalGuideVisibility = CamWheel_GetGuideState #guides_visible true
+
+  try
+  (
+    viewport.setCamera cameraNode
+    CamWheel_SetGuideState #guides_visible false
+    CamWheel_RedrawGuides()
+    local exportSucceeded = CamWheel_RunNativePreviewExport normalizedPath
+    CamWheel_SetGuideState #guides_visible originalGuideVisibility
+    CamWheel_RedrawGuides()
+    exportSucceeded
+  )
+  catch
+  (
+    CamWheel_SetGuideState #guides_visible originalGuideVisibility
+    CamWheel_RedrawGuides()
+    throw()
+  )
+)
+
+fn CamWheel_JoinNameList values =
+(
+  local joinedValue = ""
+
+  for valueIndex = 1 to values.count do
+  (
+    if valueIndex > 1 do joinedValue += ", "
+    joinedValue += (values[valueIndex] as string)
+  )
+
+  joinedValue
+)
+
+fn CamWheel_ExportSelectedCameras cameraNodes exportDirectory =
+(
+  local successCount = 0
+  local failedCameraNames = #()
+  local resultDirectory = exportDirectory
+
+  if cameraNodes == undefined or cameraNodes.count == 0 do return #(0, 0, resultDirectory, failedCameraNames)
+  if resultDirectory == undefined or resultDirectory == "" do return #(0, cameraNodes.count, resultDirectory, failedCameraNames)
+
+  for cameraNode in cameraNodes do
+  (
+    local exportFilename = CamWheel_BuildBatchExportFilename cameraNode
+    local exportPath = CamWheel_ResolveUniqueExportPath resultDirectory exportFilename
+
+    try
+    (
+      if CamWheel_ExportViewportForCamera cameraNode exportPath then
+      (
+        successCount += 1
+      )
+      else
+      (
+        append failedCameraNames cameraNode.name
+      )
+    )
+    catch
+    (
+      append failedCameraNames cameraNode.name
+    )
+  )
+
+  local failureCount = failedCameraNames.count
+  local summaryText = "批量导出完成。\n成功: " + (successCount as string) + "\n失败: " + (failureCount as string)
+
+  if resultDirectory != undefined and resultDirectory != "" do
+  (
+    summaryText += "\n目录:\n" + resultDirectory
+  )
+
+  if failureCount > 0 do
+  (
+    summaryText += "\n失败相机:\n" + (CamWheel_JoinNameList failedCameraNames)
+  )
+
+  messageBox summaryText title:"CamWheel"
+  #(successCount, failureCount, resultDirectory, failedCameraNames)
 )
 
 fn CamWheel_ExportActiveViewport =

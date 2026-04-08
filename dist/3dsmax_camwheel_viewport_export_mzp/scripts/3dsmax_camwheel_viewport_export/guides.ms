@@ -1,4 +1,5 @@
 global CamWheel_GuideState
+global CamWheel_GuideStateFilePath
 global CamWheel_GuideOverlayCallback
 global CamWheel_SetGuideState
 global CamWheel_ToggleGuides
@@ -7,14 +8,64 @@ global CamWheel_RedrawGuides
 global CamWheel_EnableGuideOverlay
 global CamWheel_DisableGuideOverlay
 
-if CamWheel_GuideState == undefined do
+fn CamWheel_DefaultGuideState =
 (
-  CamWheel_GuideState = #(
-    #guides_visible, true,
+  #(
+    #guides_visible, false,
     #show_rule_of_thirds, true,
     #show_center_cross, false,
     #show_diagonals, false
   )
+)
+
+fn CamWheel_GetGuideStateFilePath =
+(
+  if CamWheel_GuideStateFilePath == undefined do
+  (
+    local scriptRoot = if CamWheel_ScriptRoot != undefined then CamWheel_ScriptRoot else (getFilenamePath (getSourceFileName()))
+    CamWheel_GuideStateFilePath = pathConfig.appendPath scriptRoot "camwheel_guides_state.ini"
+  )
+
+  CamWheel_GuideStateFilePath
+)
+
+fn CamWheel_ParseGuideStateValue storedValue fallbackValue =
+(
+  if storedValue == undefined or storedValue == "" then return fallbackValue
+
+  local normalizedValue = toLower (storedValue as string)
+  if findItem #("true", "1", "yes", "on") normalizedValue > 0 then true
+  else if findItem #("false", "0", "no", "off") normalizedValue > 0 then false
+  else fallbackValue
+)
+
+fn CamWheel_LoadGuideState =
+(
+  local defaultState = CamWheel_DefaultGuideState()
+  local stateFilePath = CamWheel_GetGuideStateFilePath()
+
+  #(
+    #guides_visible, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "guides_visible") defaultState[2]),
+    #show_rule_of_thirds, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "show_rule_of_thirds") defaultState[4]),
+    #show_center_cross, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "show_center_cross") defaultState[6]),
+    #show_diagonals, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "show_diagonals") defaultState[8])
+  )
+)
+
+fn CamWheel_SaveGuideState =
+(
+  local stateFilePath = CamWheel_GetGuideStateFilePath()
+
+  setINISetting stateFilePath "guides" "guides_visible" ((CamWheel_GetGuideState #guides_visible false) as string)
+  setINISetting stateFilePath "guides" "show_rule_of_thirds" ((CamWheel_GetGuideState #show_rule_of_thirds true) as string)
+  setINISetting stateFilePath "guides" "show_center_cross" ((CamWheel_GetGuideState #show_center_cross false) as string)
+  setINISetting stateFilePath "guides" "show_diagonals" ((CamWheel_GetGuideState #show_diagonals false) as string)
+  true
+)
+
+if CamWheel_GuideState == undefined do
+(
+  CamWheel_GuideState = CamWheel_LoadGuideState()
 )
 
 fn CamWheel_GetGuideState key fallback =
@@ -27,6 +78,13 @@ fn CamWheel_SetGuideState key value =
 (
   local indexValue = findItem CamWheel_GuideState key
   if indexValue > 0 then CamWheel_GuideState[indexValue + 1] = value
+)
+
+fn CamWheel_SetGuideStateAndPersist key value =
+(
+  CamWheel_SetGuideState key value
+  CamWheel_SaveGuideState()
+  value
 )
 
 fn CamWheel_DrawGuideLine startPoint endPoint =
@@ -93,7 +151,7 @@ fn CamWheel_RedrawGuides =
 fn CamWheel_ToggleGuides =
 (
   local visibleValue = not (CamWheel_GetGuideState #guides_visible true)
-  CamWheel_SetGuideState #guides_visible visibleValue
+  CamWheel_SetGuideStateAndPersist #guides_visible visibleValue
   CamWheel_RedrawGuides()
   visibleValue
 )
@@ -104,6 +162,7 @@ fn CamWheel_SetAllGuides enabledValue =
   CamWheel_SetGuideState #show_rule_of_thirds enabledValue
   CamWheel_SetGuideState #show_center_cross enabledValue
   CamWheel_SetGuideState #show_diagonals enabledValue
+  CamWheel_SaveGuideState()
   CamWheel_RedrawGuides()
 )
 

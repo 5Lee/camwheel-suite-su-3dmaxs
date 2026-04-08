@@ -85,6 +85,8 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "CamWheel_SanitizeExportNamePart"
     assert_includes script, "CamWheel_BuildBatchExportFilename"
     assert_includes script, "CamWheel_ResolveUniqueExportPath"
+    assert_includes script, "CamWheel_CompareCameraNodesByName"
+    refute_includes script, "fn leftNode rightNode"
     assert_includes script, "getSaveFileName"
     assert_includes script, "getSavePath"
     assert_includes script, "camwheel"

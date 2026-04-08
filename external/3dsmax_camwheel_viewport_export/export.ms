@@ -9,6 +9,7 @@ global CamWheel_GetSceneCameras
 global CamWheel_SanitizeExportNamePart
 global CamWheel_BuildBatchExportFilename
 global CamWheel_ResolveUniqueExportPath
+global CamWheel_CompareCameraNodesByName
 global CamWheel_ExportViewportForCamera
 global CamWheel_ExportSelectedCameras
 global CamWheel_ExportActiveViewport
@@ -53,6 +54,11 @@ fn CamWheel_RequestBatchExportDirectory =
   getSavePath caption:"选择批量导出文件夹"
 )
 
+fn CamWheel_CompareCameraNodesByName leftNode rightNode =
+(
+  stricmp leftNode.name rightNode.name < 0
+)
+
 fn CamWheel_GetSceneCameras =
 (
   local cameraNodes = #()
@@ -62,12 +68,7 @@ fn CamWheel_GetSceneCameras =
     if viewport.CanSetToViewport cameraNode do append cameraNodes cameraNode
   )
 
-  qsort cameraNodes
-    (fn leftNode rightNode =
-      (
-        stricmp leftNode.name rightNode.name < 0
-      )
-    )
+  qsort cameraNodes CamWheel_CompareCameraNodesByName
   cameraNodes
 )
 
