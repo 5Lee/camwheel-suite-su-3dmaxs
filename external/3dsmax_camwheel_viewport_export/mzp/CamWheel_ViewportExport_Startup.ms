@@ -5,8 +5,19 @@ fn CamWheel_LoadInstalledStartupScript =
 
   if doesFileExist camwheelEntryScript do
   (
-    fileIn camwheelEntryScript
+    try
+    (
+      format "CamWheel startup load -> script:%\n" camwheelEntryScript
+      fileIn camwheelEntryScript
+    )
+    catch
+    (
+      format "CamWheel startup load failed -> error:%\n" (getCurrentException())
+    )
   )
+
+  if doesFileExist camwheelEntryScript == false do
+    format "CamWheel startup load skipped -> missing script:%\n" camwheelEntryScript
 )
 
 CamWheel_LoadInstalledStartupScript()

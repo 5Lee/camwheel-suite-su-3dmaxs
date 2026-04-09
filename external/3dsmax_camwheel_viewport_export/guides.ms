@@ -1,7 +1,10 @@
 global CamWheel_GuideState
 global CamWheel_GuideStateFilePath
 global CamWheel_GuideOverlayCallback
+global CamWheel_GetGuideStateFilePath
+global CamWheel_GetGuideState
 global CamWheel_SetGuideState
+global CamWheel_SetGuideStateAndPersist
 global CamWheel_ToggleGuides
 global CamWheel_SetAllGuides
 global CamWheel_RedrawGuides
@@ -14,7 +17,8 @@ fn CamWheel_DefaultGuideState =
     #guides_visible, false,
     #show_rule_of_thirds, true,
     #show_center_cross, false,
-    #show_diagonals, false
+    #show_diagonals, false,
+    #force_default_two_lights_on_export, true
   )
 )
 
@@ -48,7 +52,8 @@ fn CamWheel_LoadGuideState =
     #guides_visible, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "guides_visible") defaultState[2]),
     #show_rule_of_thirds, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "show_rule_of_thirds") defaultState[4]),
     #show_center_cross, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "show_center_cross") defaultState[6]),
-    #show_diagonals, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "show_diagonals") defaultState[8])
+    #show_diagonals, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "show_diagonals") defaultState[8]),
+    #force_default_two_lights_on_export, (CamWheel_ParseGuideStateValue (getINISetting stateFilePath "guides" "force_default_two_lights_on_export") defaultState[10])
   )
 )
 
@@ -60,6 +65,7 @@ fn CamWheel_SaveGuideState =
   setINISetting stateFilePath "guides" "show_rule_of_thirds" ((CamWheel_GetGuideState #show_rule_of_thirds true) as string)
   setINISetting stateFilePath "guides" "show_center_cross" ((CamWheel_GetGuideState #show_center_cross false) as string)
   setINISetting stateFilePath "guides" "show_diagonals" ((CamWheel_GetGuideState #show_diagonals false) as string)
+  setINISetting stateFilePath "guides" "force_default_two_lights_on_export" ((CamWheel_GetGuideState #force_default_two_lights_on_export true) as string)
   true
 )
 

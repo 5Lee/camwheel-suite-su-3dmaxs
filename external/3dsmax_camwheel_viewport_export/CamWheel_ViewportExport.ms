@@ -14,12 +14,16 @@ global CamWheel_PluginAuthor
 global CamWheel_PluginLicense
 global CamWheel_ShowAbout
 global CamWheel_EnsureToolbarIcons
+global CamWheel_ResolveInstalledScriptPath
+global CamWheel_EnsureLoaded
+global CamWheel_IsLoading
 
 if CamWheel_ScriptRoot == undefined do CamWheel_ScriptRoot = getFilenamePath (getSourceFileName())
 if CamWheel_PluginName == undefined do CamWheel_PluginName = "构图辅助"
-if CamWheel_PluginVersion == undefined do CamWheel_PluginVersion = "1.0.1"
+if CamWheel_PluginVersion == undefined do CamWheel_PluginVersion = "1.0.4"
 if CamWheel_PluginAuthor == undefined do CamWheel_PluginAuthor = "光影图像"
 if CamWheel_PluginLicense == undefined do CamWheel_PluginLicense = "GPL-3.0"
+if CamWheel_IsLoading == undefined do CamWheel_IsLoading = false
 
 fn CamWheel_ShowAbout =
 (
@@ -56,11 +60,49 @@ fn CamWheel_EnsureToolbarIcons =
   copiedAny
 )
 
+fn CamWheel_ResolveInstalledScriptPath =
+(
+  local installedScriptsRoot = pathConfig.appendPath (getDir #scripts) "3dsmax_camwheel_viewport_export"
+  local installedScriptPath = pathConfig.appendPath installedScriptsRoot "CamWheel_ViewportExport.ms"
+  if doesFileExist installedScriptPath then installedScriptPath else undefined
+)
+
 fn CamWheel_LoadModules =
 (
-  fileIn (pathConfig.appendPath (getFilenamePath (getSourceFileName())) "export.ms")
-  fileIn (pathConfig.appendPath (getFilenamePath (getSourceFileName())) "guides.ms")
-  fileIn (pathConfig.appendPath (getFilenamePath (getSourceFileName())) "panel.ms")
+  fileIn (pathConfig.appendPath CamWheel_ScriptRoot "export.ms")
+  fileIn (pathConfig.appendPath CamWheel_ScriptRoot "guides.ms")
+  fileIn (pathConfig.appendPath CamWheel_ScriptRoot "panel.ms")
+)
+
+fn CamWheel_EnsureLoaded =
+(
+  if CamWheel_ExportActiveViewport != undefined and CamWheel_ShowPanel != undefined and CamWheel_ToggleGuides != undefined then return true
+  if CamWheel_IsLoading then return false
+
+  local currentScriptPath = pathConfig.appendPath CamWheel_ScriptRoot "CamWheel_ViewportExport.ms"
+  local installedScriptPath = CamWheel_ResolveInstalledScriptPath()
+  local scriptToLoad = undefined
+  local loadedSuccessfully = false
+
+  if doesFileExist currentScriptPath then
+    scriptToLoad = currentScriptPath
+  else
+    scriptToLoad = installedScriptPath
+
+  if scriptToLoad == undefined then return false
+
+  CamWheel_IsLoading = true
+  try
+  (
+    fileIn scriptToLoad
+    loadedSuccessfully = (CamWheel_ExportActiveViewport != undefined and CamWheel_ShowPanel != undefined and CamWheel_ToggleGuides != undefined)
+  )
+  catch
+  (
+    loadedSuccessfully = false
+  )
+  CamWheel_IsLoading = false
+  loadedSuccessfully
 )
 
 CamWheel_LoadModules()
@@ -75,7 +117,19 @@ toolTip:"导出当前视口"
 buttonText:"导出当前视口"
 iconName:"CamWheel/camwheel_panel"
 (
-  on execute do CamWheel_ExportActiveViewport()
+  on execute do
+  (
+    if CamWheel_EnsureLoaded == undefined do
+    (
+      local installedScriptPath = pathConfig.appendPath (pathConfig.appendPath (getDir #scripts) "3dsmax_camwheel_viewport_export") "CamWheel_ViewportExport.ms"
+      if doesFileExist installedScriptPath do fileIn installedScriptPath
+    )
+
+    if CamWheel_EnsureLoaded != undefined do
+    (
+      if CamWheel_EnsureLoaded() do CamWheel_ExportActiveViewport()
+    )
+  )
 )
 
 macroScript CamWheel_MainPanel
@@ -84,7 +138,19 @@ toolTip:"CamWheel 控制面板"
 buttonText:"CamWheel 控制面板"
 iconName:"CamWheel/camwheel_panel"
 (
-  on execute do CamWheel_ShowPanel()
+  on execute do
+  (
+    if CamWheel_EnsureLoaded == undefined do
+    (
+      local installedScriptPath = pathConfig.appendPath (pathConfig.appendPath (getDir #scripts) "3dsmax_camwheel_viewport_export") "CamWheel_ViewportExport.ms"
+      if doesFileExist installedScriptPath do fileIn installedScriptPath
+    )
+
+    if CamWheel_EnsureLoaded != undefined do
+    (
+      if CamWheel_EnsureLoaded() do CamWheel_ShowPanel()
+    )
+  )
 )
 
 macroScript CamWheel_ToggleGuides
@@ -93,7 +159,19 @@ toolTip:"显示/隐藏辅助线"
 buttonText:"显示/隐藏辅助线"
 iconName:"CamWheel/camwheel_panel"
 (
-  on execute do CamWheel_ToggleGuides()
+  on execute do
+  (
+    if CamWheel_EnsureLoaded == undefined do
+    (
+      local installedScriptPath = pathConfig.appendPath (pathConfig.appendPath (getDir #scripts) "3dsmax_camwheel_viewport_export") "CamWheel_ViewportExport.ms"
+      if doesFileExist installedScriptPath do fileIn installedScriptPath
+    )
+
+    if CamWheel_EnsureLoaded != undefined do
+    (
+      if CamWheel_EnsureLoaded() do CamWheel_ToggleGuides()
+    )
+  )
 )
 
 macroScript CamWheel_OpenPanel
@@ -102,7 +180,19 @@ toolTip:"打开面板"
 buttonText:"打开面板"
 iconName:"CamWheel/camwheel_panel"
 (
-  on execute do CamWheel_ShowPanel()
+  on execute do
+  (
+    if CamWheel_EnsureLoaded == undefined do
+    (
+      local installedScriptPath = pathConfig.appendPath (pathConfig.appendPath (getDir #scripts) "3dsmax_camwheel_viewport_export") "CamWheel_ViewportExport.ms"
+      if doesFileExist installedScriptPath do fileIn installedScriptPath
+    )
+
+    if CamWheel_EnsureLoaded != undefined do
+    (
+      if CamWheel_EnsureLoaded() do CamWheel_ShowPanel()
+    )
+  )
 )
 
 fn CamWheel_AddLegacyContextActions targetMenu =

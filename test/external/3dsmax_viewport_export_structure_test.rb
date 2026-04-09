@@ -1,4 +1,5 @@
 require_relative "../test_helper"
+require "open3"
 
 class ThreeDsMaxViewportExportStructureTest < Minitest::Test
   def test_plugin_files_exist
@@ -27,6 +28,12 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "CamWheel_ShowAbout"
     assert_includes script, "local aboutText ="
     assert_includes script, "messageBox aboutText title:CamWheel_PluginName"
+    assert_includes script, "global CamWheel_EnsureLoaded"
+    assert_includes script, "fn CamWheel_ResolveInstalledScriptPath"
+    assert_includes script, "fn CamWheel_EnsureLoaded"
+    assert_includes script, "if CamWheel_EnsureLoaded() do CamWheel_ExportActiveViewport()"
+    assert_includes script, "if CamWheel_EnsureLoaded() do CamWheel_ShowPanel()"
+    assert_includes script, "if CamWheel_EnsureLoaded() do CamWheel_ToggleGuides()"
     assert_includes script, "macroScript"
     assert_includes script, "CamWheel"
     assert_includes script, "CamWheel_ExportActiveViewport"
@@ -64,6 +71,9 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "global CamWheel_GetGuideState"
     assert_includes script, "global CamWheel_SetGuideState"
     assert_includes script, "global CamWheel_RedrawGuides"
+    assert_includes script, "global CamWheel_GetGuideStateFilePath"
+    assert_includes script, "force_default_two_lights_on_export"
+    assert_includes script, "fn CamWheel_GetAspectPresetLabelForSize"
     assert_includes script, "CamWheel_FormatTimestamp"
     assert_includes script, "getLocalTime()"
     assert_includes script, "timeParts[1]"
@@ -76,6 +86,51 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "CamWheel_RequestExportPath"
     assert_includes script, "CamWheel_RequestBatchExportDirectory"
     assert_includes script, "CamWheel_RunNativePreviewExport"
+    assert_includes script, "CamWheel_RunSingleFramePreviewExport"
+    assert_includes script, "CamWheel_StabilizeViewportForExport"
+    assert_includes script, "CamWheel_CaptureViewportLightingState"
+    assert_includes script, "CamWheel_CreateForcedViewportLightingState"
+    assert_includes script, "CamWheel_ApplyViewportLightingState"
+    refute_includes script, "copy sourceLightingState"
+    assert_includes script, "CamWheel_RunPreviewWithUserDefinedPreset"
+    assert_includes script, "CamWheel_RunPreviewWithLegacyDefaults"
+    assert_includes script, "CamWheel_RunPreviewWithSdkParams"
+    assert_includes script, "CamWheel_LogSdkCreatePreviewOverloads"
+    assert_includes script, "CamWheel_RunPreviewWithLegacyDialogParams"
+    assert_includes script, "CamWheel_RunPreviewWithLegacyExplicitRange"
+    assert_includes script, "CamWheel_RunPreviewWithSdkIntPtr"
+    assert_includes script, "CamWheel_ApplyLegacySingleFramePreviewSettings"
+    assert_includes script, "CamWheel_UseCurrentPreviewSettingsOnce"
+    assert_includes script, "CamWheel_RunPreviewWithCurrentSettings"
+    assert_includes script, "CamWheel_OpenNativePreviewDialog"
+    assert_includes script, "CamWheel_LogCurrentPreviewSettings"
+    assert_includes script, "CamWheel preview mode -> userdefined"
+    assert_includes script, "CamWheel preview mode -> legacy default"
+    assert_includes script, "CamWheel preview mode -> sdk preview params"
+    assert_includes script, "CamWheel preview mode -> legacy dialog params"
+    assert_includes script, "CamWheel preview mode -> legacy explicit range"
+    assert_includes script, "CamWheel preview mode -> sdk intptr"
+    assert_includes script, "CamWheel preview mode -> current settings"
+    assert_includes script, "CamWheel preview settings snapshot ->"
+    assert_includes script, "CamWheel preview settings requested ->"
+    assert_includes script, "CamWheel preview settings property ->"
+    assert_includes script, "CamWheel preview implementation type ->"
+    assert_includes script, "CamWheel preview implementation property ->"
+    assert_includes script, "CamWheel preview core interface type ->"
+    assert_includes script, "CamWheel preview core property ->"
+    assert_includes script, "CamWheel preview core method ->"
+    assert_includes script, "CamWheel core anim range before ->"
+    assert_includes script, "CamWheel core anim range after ->"
+    assert_includes script, "CamWheel_ApplyLegacyPreviewSettingsForFrame 0"
+    assert_includes script, "CamWheel_ApplyCoreSingleFramePreviewRange coreInterface previewFrameNumber"
+    assert_includes script, "CamWheel_LogPreviewParamsSnapshot previewParams prefix:\"readback\""
+    assert_includes script, "CamWheel_LogPreviewParamsSnapshot previewParams prefix:\"snapshot\""
+    assert_includes script, "CamWheel_LogPreviewCoreInterfaceDetails coreInterface"
+    assert_includes script, "CamWheel sdk CreatePreview overload ->"
+    assert_includes script, "CamWheel batch export -> camera:"
+    assert_includes script, "CamWheel batch export success -> camera:"
+    assert_includes script, "CamWheel batch export failed -> camera:"
+    assert_includes script, "CamWheel batch export summary -> success:"
     assert_includes script, "CamWheel_ExportViewportForCamera"
     assert_includes script, "CamWheel_ExportSelectedCameras"
     assert_includes script, "CamWheel_ExportActiveViewport"
@@ -90,6 +145,7 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "CamWheel_GetCameraExportSettings"
     assert_includes script, "CamWheel_SaveCameraExportSettings"
     assert_includes script, "CamWheel_ApplyCameraExportSettings"
+    refute_includes script, "CamWheel_GetAspectPresetLabel != undefined"
     assert_includes script, "camera."
     assert_includes script, "aspect_preset"
     assert_includes script, "width"
@@ -99,18 +155,55 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "getSavePath"
     assert_includes script, "camwheel"
     assert_includes script, "sceneName + \"-\" + cameraName + \".jpg\""
-    assert_includes script, "0-0"
+    assert_includes script, "single frame"
+    assert_includes script, "sliderTime"
+    assert_includes script, "previewFrameTime.frame as integer"
+    assert_includes script, "fn CamWheel_CanUseUserDefinedPreviewPreset"
+    assert_includes script, "dotNet.loadAssembly \"Autodesk.Max\""
+    assert_includes script, "dotNetClass \"Autodesk.Max.GlobalInterface\""
+    assert_includes script, "COREInterface14"
+    assert_includes script, "COREInterface13"
+    assert_includes script, "CreatePreview previewParams"
+    assert_includes script, "createPreview \\"
+    assert_includes script, "filename:exportPath"
+    assert_includes script, "outputAVI:false"
+    assert_includes script, "percentSize:100"
+    assert_includes script, "fps:frameRate"
+    assert_includes script, "GetMethods()"
+    assert_includes script, "GetParameters()"
+    assert_includes script, "System.Runtime.InteropServices.Marshal"
+    assert_includes script, "StringToHGlobalUni"
+    assert_includes script, "FreeHGlobal"
+    assert_includes script, "System.IntPtr"
+    assert_includes script, "SetStart"
+    assert_includes script, "SetEnd"
+    assert_includes script, "maxVersion()"
+    refute_includes script, "CamWheel preview mode -> viewport dib"
+    refute_includes script, "viewport.getViewportDib"
+    refute_includes script, "animationRange = interval previewFrameTime previewFrameTime"
+    assert_includes script, "start:previewFrameNumber"
+    assert_includes script, "end:previewFrameNumber"
     assert_includes script, "native preview"
     assert_includes script, "createPreview"
+    assert_includes script, "NitrousGraphicsManager.GetActiveViewportSetting()"
+    assert_includes script, "LightOption"
+    assert_includes script, "DefaultLightMode"
+    assert_includes script, "#DefaultLight"
+    assert_includes script, "#TwoLights"
+    assert_includes script, "AutoDisplaySelectedLightEnabled"
+    assert_includes script, "ShowHighlightEnabled"
+    assert_includes script, "windows.processPostedMessages()"
+    assert_includes script, "sleep 0.1"
+    assert_includes script, "completeRedraw()"
     assert_includes script, "outputAVI:false"
-    assert_includes script, "start:0"
-    assert_includes script, "end:0"
     assert_includes script, "dspSafeFrame:false"
     assert_includes script, "autoPlay:false"
     assert_includes script, "vpPreset:#userdefined"
+    assert_includes script, "current preview defaults"
     assert_includes script, "jpegio.setQuality 100"
     assert_includes script, "Standard"
     assert_includes script, ".jpg"
+    refute_includes script, "rndLevel:#smoothhighlights"
   end
 
   def test_guide_script_defines_overlay_state_and_toggle_hooks
@@ -120,6 +213,7 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "show_rule_of_thirds"
     assert_includes script, "show_center_cross"
     assert_includes script, "show_diagonals"
+    assert_includes script, "force_default_two_lights_on_export"
     assert_includes script, "CamWheel_ToggleGuides"
     assert_includes script, "CamWheel_SetAllGuides"
     assert_includes script, "CamWheel_DefaultGuideState"
@@ -155,6 +249,7 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "全选"
     assert_includes script, "反选"
     assert_includes script, "批量导出选中相机"
+    assert_includes script, "CamWheel batch export panel failed -> error:"
     assert_includes script, "导出当前视口"
     assert_includes script, "显示辅助线"
     assert_includes script, "比例预设"
@@ -162,6 +257,8 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "宽度"
     assert_includes script, "高度"
     assert_includes script, "快捷分辨率"
+    assert_includes script, "打开预览面板"
+    assert_includes script, "强制两盏默认灯"
     assert_includes script, "\"1024\""
     assert_includes script, "\"1920\""
     assert_includes script, "\"2048\""
@@ -184,12 +281,21 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "CamWheel_PanelInvertCameraSelection"
     assert_includes script, "CamWheel_PanelGetSelectedCameras"
     assert_includes script, "CamWheel_PanelSelectedCameraIndex"
-    assert_includes script, "CamWheel_PanelSyncSelectedCameraSettings"
-    assert_includes script, "CamWheel_PanelApplySelectedCameraSettings"
+    assert_includes script, "CamWheel_PanelEditingMode"
+    assert_includes script, "CamWheel_PanelGetCurrentEditingCamera"
+    assert_includes script, "CamWheel_PanelSyncEditingControls"
+    assert_includes script, "viewport.setCamera cameraNode"
+    assert_includes script, "CamWheel_StabilizeViewportForExport()"
+    assert_includes script, "CamWheel_PanelPersistCurrentEditingSettings"
+    assert_includes script, "CamWheel_OpenNativePreviewDialog()"
     assert_includes script, "CamWheel_PanelFormatCameraListItem"
-    assert_includes script, "当前选中相机设置"
-    assert_includes script, "应用到当前相机"
-    assert_includes script, "createDialog CamWheelPanelRollout 420 390"
+    assert_includes script, "isValidNode"
+    assert_includes script, "CamWheel_PanelNodeIsUsable"
+    assert_includes script, "当前编辑：全局默认"
+    assert_includes script, "切回全局"
+    refute_includes script, "当前选中相机设置"
+    refute_includes script, "应用到当前相机"
+    assert_includes script, "createDialog CamWheelPanelRollout 560 422"
     assert_includes script, "CamWheel_GetGuideState"
     assert_includes script, "CamWheel_ReadRenderSettings"
     assert_includes script, "CamWheel_ApplyRenderSettings"
@@ -201,6 +307,7 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "CamWheel_SetGuideStateAndPersist #show_rule_of_thirds state"
     assert_includes script, "CamWheel_SetGuideStateAndPersist #show_center_cross state"
     assert_includes script, "CamWheel_SetGuideStateAndPersist #show_diagonals state"
+    assert_includes script, "CamWheel_SetGuideStateAndPersist #force_default_two_lights_on_export state"
     assert_includes script, "renderWidth"
     assert_includes script, "renderHeight"
   end
@@ -233,8 +340,10 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes notes, "首次默认关闭"
     assert_includes notes, "记住上一次"
     assert_includes notes, "camwheel_guides_state.ini"
-    assert_includes notes, "当前选中相机设置"
-    assert_includes notes, "应用到当前相机"
+    assert_includes notes, "当前编辑：全局默认"
+    assert_includes notes, "切回全局"
+    assert_includes notes, "选中相机后左侧控件直接切换为该相机参数"
+    assert_includes notes, "取消选中后回到全局默认"
     assert_includes notes, "每个相机独立"
     assert_includes notes, "比例预设 + 宽度 + 高度"
   end
@@ -252,7 +361,8 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
 
     assert_includes notes, "当前激活视口"
     assert_includes notes, "原生预览抓取"
-    assert_includes notes, "0-0"
+    assert_includes notes, "单帧"
+    assert_includes notes, "当前时间帧"
     assert_includes notes, "Standard"
     assert_includes notes, "未保存场景"
     assert_includes notes, "camwheel-"
@@ -274,8 +384,10 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes notes, "删除状态文件"
     assert_includes notes, "首次默认关闭"
     assert_includes notes, "记住上一次"
-    assert_includes notes, "当前选中相机设置"
-    assert_includes notes, "应用到当前相机"
+    assert_includes notes, "当前编辑：全局默认"
+    assert_includes notes, "切回全局"
+    assert_includes notes, "选中相机后左侧控件直接切换为该相机参数"
+    assert_includes notes, "取消选中后回到全局默认"
     assert_includes notes, "每个相机独立"
     refute_includes notes, "全部开启 / 全部关闭"
   end
@@ -292,8 +404,10 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes notes, "首次默认关闭"
     assert_includes notes, "记住上一次"
     assert_includes notes, "camwheel_guides_state.ini"
-    assert_includes notes, "当前选中相机设置"
-    assert_includes notes, "应用到当前相机"
+    assert_includes notes, "当前编辑：全局默认"
+    assert_includes notes, "切回全局"
+    assert_includes notes, "选中相机后左侧控件直接切换为该相机参数"
+    assert_includes notes, "取消选中后回到全局默认"
     assert_includes notes, "每个相机独立"
     assert_includes notes, "比例预设 + 宽度 + 高度"
   end
@@ -322,8 +436,13 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "getDir #scripts"
     assert_includes script, "3dsmax_camwheel_viewport_export"
     assert_includes script, "CamWheel_ViewportExport.ms"
+    assert_includes script, "fn CamWheel_ShowMzpInstallMessage"
     assert_includes script, "fn CamWheel_RunMzpInstall"
     assert_includes script, "fileIn"
+    assert_includes script, "CamWheel_EnsureLoaded"
+    assert_includes script, "try"
+    assert_includes script, "catch"
+    assert_includes script, "CamWheel MZP install ->"
     assert_includes script, "messageBox"
   end
 
@@ -337,6 +456,27 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "doesFileExist"
     assert_includes script, "fn CamWheel_LoadInstalledStartupScript"
     assert_includes script, "fileIn"
+    assert_includes script, "CamWheel startup load -> script:"
+    assert_includes script, "CamWheel startup load failed -> error:"
+    assert_includes script, "CamWheel startup load skipped -> missing script:"
+  end
+
+  def test_built_mzp_archive_exposes_install_files_at_root
+    archive_entries = built_archive_entries(dist_file("CamWheel_ViewportExport-#{CamWheel::VERSION}.mzp"))
+
+    assert_includes archive_entries, "mzp.run"
+    assert_includes archive_entries, "install.ms"
+    assert_includes archive_entries, "startup/CamWheel_ViewportExport_Startup.ms"
+    assert_includes archive_entries, "scripts/3dsmax_camwheel_viewport_export/CamWheel_ViewportExport.ms"
+    refute archive_entries.any? { |entry| entry.start_with?("3dsmax_camwheel_viewport_export_mzp/") }
+  end
+
+  def test_built_zip_archive_includes_startup_loader_for_manual_install
+    archive_entries = built_archive_entries(dist_file("3dsmax_camwheel_viewport_export-#{CamWheel::VERSION}.zip"))
+
+    assert_includes archive_entries, "3dsmax_camwheel_viewport_export/CamWheel_ViewportExport.ms"
+    assert_includes archive_entries, "3dsmax_camwheel_viewport_export/startup/CamWheel_ViewportExport_Startup.ms"
+    assert_includes archive_entries, "3dsmax_camwheel_viewport_export/install.txt"
   end
 
   private
@@ -347,5 +487,21 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
 
   def package_file(name)
     File.expand_path("../../external/3dsmax_camwheel_viewport_export/mzp/#{name}", __dir__)
+  end
+
+  def dist_file(name)
+    File.expand_path("../../dist/#{name}", __dir__)
+  end
+
+  def built_archive_entries(archive_path)
+    script = <<~PY
+      import sys, zipfile
+      with zipfile.ZipFile(sys.argv[1]) as archive:
+          for name in archive.namelist():
+              print(name)
+    PY
+    output, status = Open3.capture2("python3", "-c", script, archive_path)
+    assert status.success?, "failed to inspect archive: #{archive_path}"
+    output.lines.map(&:strip).reject(&:empty?)
   end
 end

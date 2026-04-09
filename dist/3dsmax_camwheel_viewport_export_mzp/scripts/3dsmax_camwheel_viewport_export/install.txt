@@ -18,7 +18,9 @@
 
 推荐安装位置：
 - 把整个 `3dsmax_camwheel_viewport_export` 文件夹复制到：
-- `C:\Users\<你的用户名>\AppData\Local\Autodesk\3dsMax\<版本>\ENU\scripts\startup\3dsmax_camwheel_viewport_export\`
+- `C:\Users\<你的用户名>\AppData\Local\Autodesk\3dsMax\<版本>\ENU\scripts\3dsmax_camwheel_viewport_export\`
+- 再把 `startup\CamWheel_ViewportExport_Startup.ms` 复制到：
+- `C:\Users\<你的用户名>\AppData\Local\Autodesk\3dsMax\<版本>\ENU\scripts\startup\`
 
 拖拽安装：
 - 也可以直接把 `CamWheel_ViewportExport.mzp` 拖进 3ds Max 视口
@@ -35,6 +37,7 @@
 - 启动 3ds Max 后，如果脚本未自动出现，可手动运行一次 `CamWheel_ViewportExport.ms`
 - 运行后会注册工具栏宏脚本和右键菜单入口
 - 插件加载时不会自动弹出控制面板，需要时再手动打开
+- 如果你使用的是 `ZIP` 手动安装，必须同时复制 `scripts` 目录下的插件文件和 `startup\CamWheel_ViewportExport_Startup.ms`
 
 建议入口：
 - 工具栏：把 `CamWheel / CamWheel_MainPanel` 宏脚本拖到工具栏，作为主入口
@@ -61,7 +64,14 @@
 - 辅助线仅用于视口观察，不进入最终 JPG
 - 如果右键菜单没有立即出现，可重启 3ds Max 后再测试一次
 - 控制面板右侧为 `相机批量截图` 区
+- 控制面板左侧复用一套 `比例预设 + 宽度 + 高度` 控件
+- 默认显示 `当前编辑：全局默认`
+- 首次默认读取当前渲染设置作为全局默认，之后记住上次保存的全局默认
+- 选中相机后左侧控件直接切换为该相机参数
+- 点击 `切回全局` 后会取消选中并回到全局默认
+- 取消选中后回到全局默认
 - 勾选相机后点击 `批量导出选中相机`，只需选择一次文件夹
+- 批量导出时每个相机独立使用自己的分辨率
 - 重名文件会自动追加数字后缀，避免覆盖
 - 辅助线首次默认关闭
 - 之后会记住上一次的四个辅助线开关状态
