@@ -1,7 +1,16 @@
 fn CamWheel_ShowMzpInstallMessage messageText titleText:"构图辅助" =
 (
   format "CamWheel MZP install -> %\n" messageText
-  messageBox messageText title:titleText
+  try(windows.processPostedMessages())catch()
+  try
+  (
+    local formsMessageBox = dotNetClass "System.Windows.Forms.MessageBox"
+    formsMessageBox.Show messageText titleText
+  )
+  catch
+  (
+    messageBox messageText title:titleText
+  )
 )
 
 fn CamWheel_RunMzpInstall =
@@ -20,11 +29,17 @@ fn CamWheel_RunMzpInstall =
     fileIn camwheelEntryScript
 
     local loadedSuccessfully = true
+    local panelOpened = false
     if CamWheel_EnsureLoaded != undefined do
       loadedSuccessfully = CamWheel_EnsureLoaded()
 
     if loadedSuccessfully then
     (
+      if CamWheel_ShowPanel != undefined do
+      (
+        try(panelOpened = CamWheel_ShowPanel())catch(panelOpened = false)
+      )
+      format "CamWheel MZP install success -> panelOpened:%\n" panelOpened
       CamWheel_ShowMzpInstallMessage "构图辅助 已安装。\n作者：光影图像\n开源协议：GPL-3.0\n如需固定显示按钮，请到 Customize User Interface，把 CamWheel / CamWheel_MainPanel 拖到工具栏，并可指定 icons 目录中的图标。\n重启 3ds Max 后会自动加载。"
       true
     )

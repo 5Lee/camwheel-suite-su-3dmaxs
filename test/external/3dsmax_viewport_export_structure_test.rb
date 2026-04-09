@@ -440,9 +440,13 @@ class ThreeDsMaxViewportExportStructureTest < Minitest::Test
     assert_includes script, "fn CamWheel_RunMzpInstall"
     assert_includes script, "fileIn"
     assert_includes script, "CamWheel_EnsureLoaded"
+    assert_includes script, "CamWheel_ShowPanel"
+    assert_includes script, "panelOpened"
     assert_includes script, "try"
     assert_includes script, "catch"
     assert_includes script, "CamWheel MZP install ->"
+    assert_includes script, "CamWheel MZP install success -> panelOpened:"
+    assert_includes script, "System.Windows.Forms.MessageBox"
     assert_includes script, "messageBox"
   end
 
